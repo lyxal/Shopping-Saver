@@ -60,3 +60,47 @@ app.MapGet("/get-the-whole-database", async (IConnectionMultiplexer redis) =>
 app.Run();
 
 record Product(string ProductID, string StoreID, decimal Was, decimal Now, decimal Diff, DateTime DateLastChecked);
+
+record ProductInfo(string ProductName, string ProductImage, decimal CurrentPrice, decimal SalePrice);
+
+ProductInfo? GetProductFromWoolworthsURL(string url)
+{
+    // Mock implementation for development
+    return new ProductInfo("Woolies Mock Product", "https://example.com/woolies-mock.jpg", 5.00m, 4.00m);
+}
+
+ProductInfo? GetProductFromColesURL(string url)
+{
+    // Mock implementation for development
+    return new ProductInfo("Coles Mock Product", "https://example.com/coles-mock.jpg", 5.50m, 4.50m);
+}
+
+IEnumerable<ProductInfo> SearchWoolworths(string name)
+{
+    return new List<ProductInfo>
+    {
+        new ProductInfo(name, "https://example.com/w.jpg", 10.00m, 8.00m),
+        new ProductInfo(name + " alt", "https://example.com/w2.jpg", 15.00m, 12.00m)
+    };
+}
+
+IEnumerable<ProductInfo> SearchColes(string name)
+{
+    return new List<ProductInfo>
+    {
+        new ProductInfo(name, "https://example.com/c.jpg", 9.50m, 8.50m),
+        new ProductInfo(name + " alt", "https://example.com/c2.jpg", 14.50m, 11.50m)
+    };
+}
+
+ProductInfo? GetProductFromWoolworthsName(string name)
+{
+    var results = SearchWoolworths(name);
+    return results.FirstOrDefault(p => p.ProductName.Equals(name, StringComparison.OrdinalIgnoreCase));
+}
+
+ProductInfo? GetProductFromColesName(string name)
+{
+    var results = SearchColes(name);
+    return results.FirstOrDefault(p => p.ProductName.Equals(name, StringComparison.OrdinalIgnoreCase));
+}

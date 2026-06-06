@@ -1,8 +1,0 @@
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\ComparisonAPI.csproj.AssemblyReference.cache
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\rpswa.dswa.cache.json
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\ComparisonAPI.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\ComparisonAPI.AssemblyInfoInputs.cache
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\ComparisonAPI.AssemblyInfo.cs
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\ComparisonAPI.csproj.CoreCompileInputs.cache
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\ComparisonAPI.MvcApplicationPartsAssemblyInfo.cs
-C:\Users\jonat\Documents\Shopping Saver\ComparisonAPI\obj\Debug\net8.0\ComparisonAPI.MvcApplicationPartsAssemblyInfo.cache
