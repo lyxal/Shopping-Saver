@@ -54,7 +54,7 @@
 
 ```json
 {
-    "email": "<userID>"
+    "<email>": "<userID>"
 }
 ```
 
@@ -65,11 +65,10 @@
 - Product ids are not specific to a store. In this table, it's more "here's the ID to use when looking up the product for the store".
 ```json
 {
-    "listID": {
-        "userID": "<userID>",
-        "products": [
-            {"colesID": "<colesID>", "woolworthsID": "<woolworthsID>"}
-        ]
+    "<userID>": {
+        "<listID>":  [
+                {"colesID": "<colesID>", "woolworthsID": "<woolworthsID>"}
+            ]
     }
 }
 ```

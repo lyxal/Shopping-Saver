@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(
@@ -22,85 +23,34 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", () =>
 {
-    return Results.Ok("Hello World!");
+    return Results.Ok("There's a 67% chance you meant to use the API. Maybe go do that.");
 })
 .WithName("Index");
 
 
-// Receive an incoming `{key: value}` json body and store it in Redis.
-app.MapPost("/set-key", async (IConnectionMultiplexer redis, [FromBody] Dictionary<string, string> keyValuePairs) =>
+app.MapPost("/addProductFromLink", async (AddProductLinkRequest req, IConnectionMultiplexer redis) =>
 {
     var db = redis.GetDatabase();
-    Console.WriteLine("Received key-value pairs:");
-    Console.WriteLine(JsonSerializer.Serialize(keyValuePairs, new JsonSerializerOptions { WriteIndented = true }));
-    foreach (var kvp in keyValuePairs)
+    var userid = req.UserID;
+    if (string.IsNullOrEmpty(userid))
     {
-        await db.StringSetAsync("goofy:" + kvp.Key, kvp.Value);
+        return Results.BadRequest("UserID is required.");
     }
-    return Results.Ok("Keys set successfully");
-}).WithName("SetKey");
+    var listid = req.ListID;
+    if (string.IsNullOrEmpty(listid))
+    {
+        return Results.BadRequest("ListID is required.");
+    }
+    if (db.StringGet($"lists:{userid}:{listid}") == RedisValue.Null)
+    {
+        return Results.BadRequest("List does not exist for user.");
+    }
+    return Results.Ok("This endpoint is not implemented yet, but the request was valid. Here's what we got: " + JsonSerializer.Serialize(req));
+}).WithName("AddProductFromLink");
 
-
-app.MapGet("/get-the-whole-database", async (IConnectionMultiplexer redis) =>
+app.MapPost("/newListForUser", async (String userID, IConnectionMultiplexer redis) =>
 {
-    var db = redis.GetDatabase();
-    var server = redis.GetServer(redis.GetEndPoints().First());
-    var keys = server.Keys().ToArray();
 
-    var result = new Dictionary<string, string>();
-    foreach (var key in keys)
-    {
-        var value = await db.StringGetAsync(key);
-        result[key] = value;
-    }
-
-    return Results.Ok(result);
-}).WithName("GetWholeDatabase");
+}).WithName("Create new list for user");
 
 app.Run();
-
-record Product(string ProductID, string StoreID, decimal Was, decimal Now, decimal Diff, DateTime DateLastChecked);
-
-record ProductInfo(string ProductName, string ProductImage, decimal CurrentPrice, decimal SalePrice);
-
-ProductInfo? GetProductFromWoolworthsURL(string url)
-{
-    // Mock implementation for development
-    return new ProductInfo("Woolies Mock Product", "https://example.com/woolies-mock.jpg", 5.00m, 4.00m);
-}
-
-ProductInfo? GetProductFromColesURL(string url)
-{
-    // Mock implementation for development
-    return new ProductInfo("Coles Mock Product", "https://example.com/coles-mock.jpg", 5.50m, 4.50m);
-}
-
-IEnumerable<ProductInfo> SearchWoolworths(string name)
-{
-    return new List<ProductInfo>
-    {
-        new ProductInfo(name, "https://example.com/w.jpg", 10.00m, 8.00m),
-        new ProductInfo(name + " alt", "https://example.com/w2.jpg", 15.00m, 12.00m)
-    };
-}
-
-IEnumerable<ProductInfo> SearchColes(string name)
-{
-    return new List<ProductInfo>
-    {
-        new ProductInfo(name, "https://example.com/c.jpg", 9.50m, 8.50m),
-        new ProductInfo(name + " alt", "https://example.com/c2.jpg", 14.50m, 11.50m)
-    };
-}
-
-ProductInfo? GetProductFromWoolworthsName(string name)
-{
-    var results = SearchWoolworths(name);
-    return results.FirstOrDefault(p => p.ProductName.Equals(name, StringComparison.OrdinalIgnoreCase));
-}
-
-ProductInfo? GetProductFromColesName(string name)
-{
-    var results = SearchColes(name);
-    return results.FirstOrDefault(p => p.ProductName.Equals(name, StringComparison.OrdinalIgnoreCase));
-}
