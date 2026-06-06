@@ -1,0 +1,4 @@
+- Assisted in choice of database provider - Redis over MongoDB.
+- Refined database schema.
+- Refined POST request body formats.
+- Stubbed `getProductFromWoolworthsURL`, `getProductFromColesURL`, `getProductFromWoolworthsName`, and `getProductFromColesName` functions.
