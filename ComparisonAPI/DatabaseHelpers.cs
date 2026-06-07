@@ -78,6 +78,7 @@ public class ListsDatabase
             products.Add(new ProductInfo(
                 productDoc["productID"].AsString,
                 productDoc["storeID"].AsString,
+                productDoc["name"].AsString,
                 productDoc["was"].AsDecimal,
                 productDoc["now"].AsDecimal,
                 productDoc["diff"].AsDecimal,
@@ -85,5 +86,25 @@ public class ListsDatabase
             ));
         }
         return new UserProductList(listDoc["listID"].AsString, listDoc["listName"].AsString, products);
+    }
+
+    public List<String> GetListsForUser(string userID)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("userID", userID);
+        var listDocs = _listsCollection.Find(filter).ToList();
+        return listDocs.Select(doc => doc["listID"].AsString).ToList();
+    }
+}
+
+public class ProductsDatabase
+{
+    private readonly MongoClient _client;
+    private readonly IMongoDatabase _database;
+    private readonly IMongoCollection<BsonDocument> _productsCollection;
+    public ProductsDatabase(MongoClient client)
+    {
+        _client = client;
+        _database = _client.GetDatabase("Products");
+        _productsCollection = _database.GetCollection<BsonDocument>("rawProducts");
     }
 }
