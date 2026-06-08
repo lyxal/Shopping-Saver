@@ -9,6 +9,16 @@ HashSet<string> SupportedStores = ["Woolworths", "Coles"];
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
     .Build();
@@ -39,7 +49,13 @@ var listsDb = new ListsDatabase(client);
 var factProductsDb = new FactProductsDatabase(client);
 var pricedProductsDb = new PricedProductsDatabase(client);
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = null;
+});
+
 var app = builder.Build();
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 
 app.MapGet("/", () => "I think you meant to call an API route.");
@@ -278,6 +294,7 @@ app.Use(async (context, next) =>
     context.Request.EnableBuffering();
     var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
     context.Request.Body.Position = 0;
+    Console.WriteLine($"Request path: {context.Request.Path}");
     Console.WriteLine($"Raw body: {body}");
 
     try

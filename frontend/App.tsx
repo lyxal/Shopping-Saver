@@ -92,7 +92,7 @@ type AppState = {
   createListName: string;
 };
 
-const DEFAULT_API_BASE_URL = "http://localhost:5083";
+const DEFAULT_API_BASE_URL = "http://localhost:5000";
 
 const initialState: AppState = {
   email: "",
