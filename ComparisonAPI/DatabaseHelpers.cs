@@ -76,31 +76,14 @@ public class ListsDatabase
             return null;
         }
 
-        var products = new List<FactProductPair>();
-        foreach (var productDoc in listDoc["Products"].AsBsonArray)
-        {
-            var woolworthsProductDoc = productDoc["Woolworths"].AsBsonDocument;
-            var colesProductDoc = productDoc["Coles"].AsBsonDocument;
-
-            var woolworthsProduct = new FactProduct(
-                woolworthsProductDoc["ProductID"].AsString,
-                woolworthsProductDoc["Name"].AsString,
-                woolworthsProductDoc["Store"].AsString,
-                woolworthsProductDoc["Link"].AsString,
-                woolworthsProductDoc["ImageLink"].AsString
-            );
-
-            var colesProduct = new FactProduct(
-                colesProductDoc["ProductID"].AsString,
-                colesProductDoc["Name"].AsString,
-                colesProductDoc["Store"].AsString,
-                colesProductDoc["Link"].AsString,
-                colesProductDoc["ImageLink"].AsString
-            );
-
-            products.Add(new FactProductPair(woolworthsProduct, colesProduct));
-        }
-        return products;
+        /*
+        There is a problem here: I need the API to return a list of FactProduct items.
+        But this class only ever has access to product IDs. I can return a list of
+        product IDs, but something still needs to take those product IDs and
+        transform them. That is for another day. This function will thus not
+        return anything so that it registers as a compile error and something that I need
+        to look at before continuing any further. Okay thank you, have good day.
+        */
     }
 
     public void AddComparisonToList(string userID, string listID, FactProduct colesProduct, FactProduct woolworthsProduct)
@@ -108,17 +91,22 @@ public class ListsDatabase
         var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID) & Builders<BsonDocument>.Filter.Eq("ListID", listID);
         var update = Builders<BsonDocument>.Update.Push("Products", new BsonDocument
         {
-            {"Coles", BsonDocument.Create(colesProduct)},
-            {"Woolworths", BsonDocument.Create(woolworthsProduct)}
+            {"Coles", colesProduct.ProductID},
+            {"Woolworths", woolworthsProduct.ProductID}
         });
         _listsCollection.UpdateOne(filter, update);
     }
 
-    public List<string> GetListsForUser(string userID)
+    public List<Dictionary<string, string>> GetListsForUser(string userID)
     {
+
         var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID);
         var listDocs = _listsCollection.Find(filter).ToList();
-        return listDocs.Select(doc => doc["ListID"].AsString).ToList();
+        return [.. listDocs.Select(doc => new Dictionary<string, string>
+        {
+            { "ListID", doc["ListID"].AsString },
+            { "ListName", doc["ListName"].AsString }
+        })];
     }
 }
 
