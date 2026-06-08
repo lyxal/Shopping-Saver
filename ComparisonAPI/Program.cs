@@ -105,7 +105,42 @@ app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest reque
 
 app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
 {
-    return Results.Ok(new { Message = "This endpoint is a placeholder and does not yet have functionality." });
+    var names = request.ProductNames;
+    FactProduct woolworthsProduct;
+    FactProduct colesProduct;
+
+    names.TryGetValue("Woolworths", out string? wName);
+    names.TryGetValue("Coles", out string? cName);
+
+    // Similar logic to the /addProductFromLink endpoint, but with product names instead of links.
+
+    if (wName != null && cName != null)
+    {
+        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(SupermarketAPI.FindProductByNameAtWoolworths(wName) ?? "");
+        colesProduct = factProductsDb.GetOrFetchFromColesLink(SupermarketAPI.FindProductByNameAtColes(cName) ?? "");
+    }
+    else if (wName != null)
+    {
+        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(SupermarketAPI.FindProductByNameAtWoolworths(wName) ?? "");
+        var colesLink = SupermarketAPI.FindProductByNameAtColes(woolworthsProduct.Name);
+        if (colesLink == null) return Results.Problem("Could not find product at Coles.");
+        colesProduct = factProductsDb.GetOrFetchFromColesLink(colesLink);
+    }
+    else if (cName != null)
+    {
+        colesProduct = factProductsDb.GetOrFetchFromColesLink(SupermarketAPI.FindProductByNameAtColes(cName) ?? "");
+        var woolworthsLink = SupermarketAPI.FindProductByNameAtWoolworths(colesProduct.Name);
+        if (woolworthsLink == null) return Results.Problem("Could not find product at Woolworths.");
+        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(woolworthsLink);
+    }
+    else
+    {
+        return Results.BadRequest("No product names provided.");
+    }
+
+    listsDb.AddComparisonToList(request.UserID, request.ListID, colesProduct, woolworthsProduct);
+
+    return Results.Ok(new { Message = "Product added successfully." });
 });
 
 app.MapGet("/getLists/{userID}", async (string userID) =>
@@ -125,7 +160,15 @@ app.Use(async (context, next) =>
     var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
     context.Request.Body.Position = 0;
     Console.WriteLine($"Raw body: {body}");
-    await next();
-});
 
+    try
+    {
+        await next();
+    }
+    catch (BadHttpRequestException ex) when (ex.StatusCode == 400)
+    {
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+});
 app.Run();
