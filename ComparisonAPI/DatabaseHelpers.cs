@@ -108,24 +108,8 @@ public class ListsDatabase
         var filter = Builders<BsonDocument>.Filter.Eq("userID", userID) & Builders<BsonDocument>.Filter.Eq("listID", listID);
         var update = Builders<BsonDocument>.Update.Push("products", new BsonDocument
         {
-            { "woolworths", new BsonDocument
-                {
-                    { "productID", woolworthsProduct.ProductID },
-                    { "name", woolworthsProduct.Name },
-                    { "store", woolworthsProduct.Store },
-                    { "link", woolworthsProduct.Link },
-                    { "imageLink", woolworthsProduct.ImageLink }
-                }
-            },
-            { "coles", new BsonDocument
-                {
-                    { "productID", colesProduct.ProductID },
-                    { "name", colesProduct.Name },
-                    { "store", colesProduct.Store },
-                    { "link", colesProduct.Link },
-                    { "imageLink", colesProduct.ImageLink }
-                }
-            }
+            {"Coles", colesProduct.ProductID},
+            {"Woolworths", woolworthsProduct.ProductID}
         });
         _listsCollection.UpdateOne(filter, update);
     }
@@ -166,7 +150,16 @@ public class FactProductsDatabase
         }
         else
         {
-            return SupermarketAPI.GetWoolworthsProductFor(productLink);
+            var woolworthsProduct = SupermarketAPI.GetWoolworthsProductFor(productLink);
+            _productsCollection.InsertOne(new BsonDocument
+            {
+                { "productID", woolworthsProduct.ProductID },
+                { "name", woolworthsProduct.Name },
+                { "store", woolworthsProduct.Store },
+                { "link", woolworthsProduct.Link },
+                { "imageLink", woolworthsProduct.ImageLink }
+            });
+            return woolworthsProduct;
         }
     }
 
@@ -186,7 +179,16 @@ public class FactProductsDatabase
         }
         else
         {
-            return SupermarketAPI.GetColesProductFor(productLink);
+            var colesProduct = SupermarketAPI.GetColesProductFor(productLink);
+            _productsCollection.InsertOne(new BsonDocument
+            {
+                { "productID", colesProduct.ProductID },
+                { "name", colesProduct.Name },
+                { "store", colesProduct.Store },
+                { "link", colesProduct.Link },
+                { "imageLink", colesProduct.ImageLink }
+            });
+            return colesProduct;
         }
     }
 
