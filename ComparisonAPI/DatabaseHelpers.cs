@@ -114,7 +114,7 @@ public class ListsDatabase
         _listsCollection.UpdateOne(filter, update);
     }
 
-    public List<String> GetListsForUser(string userID)
+    public List<string> GetListsForUser(string userID)
     {
         var filter = Builders<BsonDocument>.Filter.Eq("userID", userID);
         var listDocs = _listsCollection.Find(filter).ToList();

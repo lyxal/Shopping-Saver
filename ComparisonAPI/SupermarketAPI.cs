@@ -3,13 +3,13 @@ static class SupermarketAPI
     static public PricedProduct GetWoolworthsPriceFor(string productLink)
     {
         // Placeholder implementation
-        return new PricedProduct(Guid.NewGuid().ToString(), "Woolworths", 10.00m, 8.00m);
+        return new PricedProduct(Guid.NewGuid().ToString(), "Woolworths", 10.00m, 8.00m, DateTime.UtcNow);
     }
 
     static public PricedProduct GetColesPriceFor(string productLink)
     {
         // Placeholder implementation
-        return new PricedProduct(Guid.NewGuid().ToString(), "Coles", 9.50m, 7.50m);
+        return new PricedProduct(Guid.NewGuid().ToString(), "Coles", 9.50m, 7.50m, DateTime.UtcNow);
     }
 
     static public FactProduct GetWoolworthsProductFor(string productLink)

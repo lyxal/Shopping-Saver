@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
 
@@ -10,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
     .Build();
+
+BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc));
 
 var connectionUri = config["MongoDB:ConnectionString"];
 
@@ -151,6 +155,8 @@ app.MapGet("/getLists/{userID}", async (string userID) =>
 // The big one - this is the meat of the application.
 app.MapPost("/compare", async (CompareRequest request) =>
 {
+    var list = listsDb.GetListForUser(request.UserID, request.ListID);
+    if (list == null) return Results.Problem("List not found.");
     return Results.Ok(new { Message = "This endpoint is a placeholder and does not yet have functionality." });
 });
 

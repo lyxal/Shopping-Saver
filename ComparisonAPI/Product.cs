@@ -2,7 +2,8 @@ public record PricedProduct(
     string ProductID,
     string StoreID,
     decimal NormalPrice,
-    decimal SalePrice
+    decimal SalePrice,
+    DateTime LastChecked
 );
 
 public record FactProduct(
