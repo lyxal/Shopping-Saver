@@ -7,8 +7,18 @@ React Native frontend for the `ComparisonAPI` backend.
 - Signs a user in with email
 - Loads and creates shopping lists
 - Adds products by name or link
+- Supports Coles + Woolworths, Coles-only, and Woolworths-only entry
 - Runs the Coles vs Woolworths comparison
 - Shows the cheaper store plus per-item differences
+- Uses four explicit pages: Login, Pick List, Modify List, Comparison Results
+
+## Structure
+
+- `App.tsx` is now just the Expo entrypoint.
+- `src/AppShell.tsx` owns the state and page switching.
+- `src/screens/` contains one file per page.
+- `src/components/common.tsx` contains shared UI pieces.
+- `src/lib/` contains API helpers, theme values, and shared types.
 
 ## Running it
 

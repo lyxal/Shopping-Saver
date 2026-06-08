@@ -108,8 +108,8 @@ public class ListsDatabase
         var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID) & Builders<BsonDocument>.Filter.Eq("ListID", listID);
         var update = Builders<BsonDocument>.Update.Push("Products", new BsonDocument
         {
-            {"Coles", colesProduct.ProductID},
-            {"Woolworths", woolworthsProduct.ProductID}
+            {"Coles", BsonDocument.Create(colesProduct)},
+            {"Woolworths", BsonDocument.Create(woolworthsProduct)}
         });
         _listsCollection.UpdateOne(filter, update);
     }
