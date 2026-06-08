@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Shopping Saver",
+    "slug": "shopping-saver",
+    "scheme": "shoppingsaver",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0F172A"
+    }
+  }
+}

@@ -169,3 +169,7 @@ ClientBin/
 *.publishsettings
 orleans.codegen.cs
 node_modules/
+
+# ================================
+# React Native .gitignore
+# ================================

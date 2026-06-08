@@ -52,3 +52,14 @@ Functional Requirements
 - Problem: API key life unknown. Could be long lasting. Could be short lived. I’ve been stung by Google invalidating secrets/cookies/etc when they’ve been scraped from a service.
 - Problem: Using personal API keys could ruin my own personal usage of Coles services (IP ban, key ban, etc)
 - Problem: Searching
+
+## Mobile Frontend
+
+The React Native frontend lives in [`frontend/`](frontend/). It is an Expo-based app that connects to the `ComparisonAPI` backend and covers the core workflow:
+
+- sign in with email
+- create or choose a grocery list
+- add products by name or link
+- compare Coles vs Woolworths totals
+
+Set `EXPO_PUBLIC_API_BASE_URL` to your backend URL before running the app locally.
