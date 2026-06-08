@@ -1,241 +1,240 @@
-`<>` around a value means "will be replaced with value"
+# Mongo Schema for ComparisonAPI
 
-## Prices Table
+`<>` around a value indicates that the value will be replaced with actual values.
+
+All keys must start with a capital letter.
+
+## Database: `Users`
+### Collection: `users`
+```json
+{
+    "Email": "<user email>",
+    "UserID": "<user ID>",
+}
+```
+
+## Database: `Lists`
+### Collection: `lists`
 
 ```json
 {
-    "<productID>": {
-        "coles": {
-            "<storeID>": {
-                "$was": "<price>",
-                "$now": "<price>",
-                "$diff": "<price>",
-                "dateLastChecked": "<date>"
-            }
+    "UserID": "<user ID>",
+    "ListID": "<list ID>",
+    "Products": [
+        {
+            "Coles": "<product ID of coles product>",
+            "Woolworths": "<product ID of woolworths product>"
         },
-        "woolworths": {
-            "<storeID>": {
-                "$was": "<price>",
-                "$now": "<price>",
-                "$diff": "<price>",
-                "dateLastChecked": "<date>"
-            }
-        },
-        "image": "imageSource"
-    }
-}
-```
-
-## Locations Table
-
-```json
-{
-    "coles": {
-        "<storeName>": "<storeID>"
-    },
-    "woolworths": {
-        "<storeName>": "<storeID>"
-    }
-}
-```
-
-## Products Table
-
-```json
-{
-    "<productID>": {
-        "productName": "<name>",
-        "aliases": ["<alias1>", "<alias2>"]
-    }
-}
-```
-
-## Users Table
-
-```json
-{
-    "<email>": "<userID>"
-}
-```
-
-## User Lists Table
-
-- Each `product` in `products` has a `colesID` and a `woolworthsID` to allow for "closest substitute" comparisons. These must be explicitly added by the user. The system must never automatically create a "closest substitute" comparison. The system must only automatically create "exact" comparisons, where both stores have the exact same product.
-- `colesID` and `woolworthsID` will always refer to a `productID` in the Products Table.
-- Product ids are not specific to a store. In this table, it's more "here's the ID to use when looking up the product for the store".
-```json
-{
-    "<userID>": {
-        "<listID>":  [
-                {"colesID": "<colesID>", "woolworthsID": "<woolworthsID>"}
-            ]
-    }
-}
-```
-
-## Routes
-
-### `POST /compare`
-
-#### Params
-
-```json
-{
-listID: "<listID>",
-userID: "<userID>"
-}
-```
-
-#### Responses
-
-- 403 - List does not belong to user
-- 200:
-
-```json
-{
-    "items": [
-        {
-            "productName": "<name>",
-            "productImage": "<source>",
-            "colesWasPrice": "<colesWasPrice>",
-            "colesNowPrice": "<colesNowPrice>",
-            "colesSaving": "<colesSaving>",
-            "woolworthsWasPrice": "<woolworthsWasPrice>",
-            "woolworthsNowPrice": "<woolworthsNowPrice>",
-            "woolworthsSaving": "<woolworthsSaving>",
-            "winnerStore": "coles|woolworths",
-            "winnerBy": "<amount>"
-        }
-    ],
-    "colesTotalCost": "<amount>",
-    "colesTotalSavings": "<amount>",
-    "woolworthsTotalAmount": "<amount>",
-    "woolworthsTotalSavings": "<amount>",
-    "winnerStore": "coles|woolworths",
-    "winnerBy": "<amount>"
-}
-```
-
-## Product Addition Routes
-
-4 input methods:
-
-1. Two store links - user provides links to the product on both stores. System extracts product info and prices from the links. The products may be different.
-2. One store link - user provides a link to the product on one store. System extracts product info and price from the link, then tries to find the exact product on the other store. If the product is not stocked in the other store, the user is informed that this will not be included in price comparisons.
-3. Two product names - user provides the product name for both stores. System tries to find the exact product at each store. The products may be different. If a product is not found at a store, the user is informed that this will not be included in price comparisons.
-4. One product name - user provides the product name for one store. System tries to find the exact product at that store, then tries to find the exact product at the other store. If a product is not found at a store, the user is informed that this will not be included in price comparisons.
-
-### `POST /addProductFromLink`
-
-#### Params
-
-```json
-{
-    "userID": "<userID>",
-    "listID": "<listID>",
-    "links": {
-        [
-            {
-                "store": "coles|woolworths",
-                "url": "<productURL>"
-            }
-        ]
-    }
-}
-```
-
-#### Responses
-
-- 403 - List does not belong to user
-- 200:
-
-```json
-{
-    "products": [
-        {
-            "productName": "<name>",
-            "productImage": "<source>",
-            "colesID": "<colesID>",
-            "woolworthsID": "<woolworthsID>"
-        }
-    ],
-    "message": "<informationalMessage>"
-}
-```
-
-### `POST /addProductFromName`
-
-#### Params
-
-```json
-{
-    "userID": "<userID>",
-    "listID": "<listID>",
-    "productNames": {
-        [
-            {
-                "store": "coles|woolworths",
-                "name": "<productName>"
-            }
-        ]
-    }
-}
-```
-
-#### Responses
-
-- 403 - List does not belong to user
-- 200:
-
-```json
-{
-    "products": [
-        {
-            "productName": "<name>",
-            "productImage": "<source>",
-            "colesID": "<colesID>",
-            "woolworthsID": "<woolworthsID>"
-        }
-    ],
-    "message": "<informationalMessage>"
-}
-```
-
-### `GET /listsForUser`
-
-#### Params
-
-```
-{
-    "userID": "<userID>"
-}
-```
-
-#### Responses
-
-- 200:
-
-```json
-{
-    "lists": [
-        {
-            "listID": "<listID>",
-            "products": [
-                {
-                    "productName": "<name>",
-                    "productImage": "<source>",
-                    "colesID": "<colesID>",
-                    "woolworthsID": "<woolworthsID>"
-                }
-            ]
-        }
+        ...
     ]
 }
 ```
 
-## External API Integration
+## Database: `Products`
+### Collection: `factProducts`
 
-- `getProductFromWoolworthsURL(url) -> {productName, productImage, currentPrice, salePrice}`
-- `getProductFromColesURL(url) -> {productName, productImage, currentPrice, salePrice}`
-- `getProductFromWoolworthsName(name) = searchWoolworths(name) |> if (exactMatch) return exactMatch else return null`
-- `getProductFromColesName(name) = searchColes(name) |> if (exactMatch) return exactMatch else return null`
+```json
+{
+    "ProductID": "<product ID>",
+    "Name": "<product name>",
+    "Store": "<store name>",
+    "Link": "<link to product page>",
+    "ImageLink": "<link to product image>"
+}
+```
+
+### Collection: `pricedProducts`
+
+```json
+{
+    "ProductID": "<product ID>",
+    "Store": "<store name>",
+    "NormalPrice": <normal price as a number>,
+    "CurrentPrice": <current price as a number>,
+    "LastUpdated": "<utc timestamp of when the price was last updated>",
+    "ProductLink": "<link to product page>"
+}
+```
+
+# API Endpoints
+
+## `POST /signin`
+
+### Request Body
+```json
+{
+    "Email": "<user email>"
+}
+```
+
+### Response
+```json
+{
+    "UserID": "<user ID>"
+}
+```
+
+## `POST /createlist`
+
+### Request Body
+```json
+{
+    "UserID": "<user ID>",
+    "ListName": "<list name>"
+}
+```
+
+### Response
+```json
+{
+    "ListID": "<list ID>"
+}
+```
+
+## `GET /getlist/{userID}/{listID}`
+
+### Response
+```json
+{
+    "Products": [
+        {
+            "Coles": {
+                "ProductID": "<product ID>",
+                "Name": "<product name>",
+                "Store": "<store name>",
+                "Link": "<link to product page>",
+                "ImageLink": "<link to product image>"
+            },
+            "Woolworths": {
+                "ProductID": "<product ID>",
+                "Name": "<product name>",
+                "Store": "<store name>",
+                "Link": "<link to product page>",
+                "ImageLink": "<link to product image>"
+            }
+        },
+        ...
+    ]
+}
+```
+
+## `POST /addProductFromLink`
+
+### Request Body
+
+NOTE: `ProductLinks` can contain either a Coles link, a Woolworths link, or both. If both are provided, the API will add both products to the database and link them together in the list. If only one is provided, the API will attempt to find a match for the product in the other store and add it to the list if found. If no match is found, no pairing will be created, and no product will be added for either store.
+
+TODO: Make it so that if only one link is provided, the API will still add the product to the database and the list, but without a pairing. When comparing prices, just add to the total, but don't call it
+a saving. Still get the current price for the product though.
+
+```json
+{
+    "UserID": "<user ID>",
+    "ListID": "<list ID>",
+    "ProductLinks": {
+        "Coles": "<link to coles product page>",
+        "Woolworths": "<link to woolworths product page>"
+    }
+}
+```
+
+### Response
+```json
+{
+    "Message": "<response message>"
+}
+```
+
+## `POST /addProductFromName`
+
+### Request Body
+
+NOTE: Like with `addProductFromLink`, `ProductNames` can contain either a Coles product name, a Woolworths product name, or both. The same logic applies for how the API will handle the request.
+
+TODO: Same as with `addProductFromLink`, if only one product name is provided, the API should still add the product to the database and the list, but without a pairing.
+
+```json
+{
+    "UserID": "<user ID>",
+    "ListID": "<list ID>",
+    "ProductNames": {
+        "Coles": "<name of coles product>",
+        "Woolworths": "<name of woolworths product>"
+    }
+}
+```
+
+### Response
+```json
+{
+    "Message": "<response message>"
+}
+```
+
+## `GET /getlists/{userID}`
+
+### Response
+```json
+{
+    "Lists": [
+        {
+            "ListID": "<list ID>",
+            "ListName": "<list name>"
+        },
+        ...
+    ]
+}
+```
+
+## `POST /compare`
+
+### Request Body
+```json
+{
+    "UserID": "<user ID>",
+    "ListID": "<list ID>"
+}
+```
+
+### Response
+```json
+{
+    "TotalNormalPrice": {
+        "Coles": <total normal price of all coles products in the list as a number>,
+        "Woolworths": <total normal price of all woolworths products in the list as a number>
+    },
+    "TotalCurrentPrice": {
+        "Coles": <total current price of all coles products in the list as a number>,
+        "Woolworths": <total current price of all woolworths products in the list as a number>
+    },
+    "TotalSavings": {
+        "Coles": <total savings of all coles products in the list as a number>,
+        "Woolworths": <total savings of all woolworths products in the list as a number>
+    },
+    "Products": [
+        {
+            "Coles": {
+                "ProductID": "<product ID>",
+                "Name": "<product name>",
+                "Store": "<store name>",
+                "Link": "<link to product page>",
+                "ImageLink": "<link to product image>",
+                "NormalPrice": <normal price as a number>,
+                "CurrentPrice": <current price as a number>,
+                "Savings": <savings as a number>
+            },
+            "Woolworths": {
+                "ProductID": "<product ID>",
+                "Name": "<product name>",
+                "Store": "<store name>",
+                "Link": "<link to product page>",
+                "ImageLink": "<link to product image>",
+                "NormalPrice": <normal price as a number>,
+                "CurrentPrice": <current price as a number>,
+                "Savings": <savings as a number>
+            }
+        },
+        ...
+    ]
+}
+```

@@ -1,9 +1,10 @@
 public record PricedProduct(
     string ProductID,
-    string StoreID,
+    string Store,
     decimal NormalPrice,
     decimal SalePrice,
-    DateTime LastChecked
+    DateTime LastChecked,
+    string ProductLink
 );
 
 public record FactProduct(
@@ -12,6 +13,16 @@ public record FactProduct(
     string Store,
     string Link,
     string ImageLink
+);
+
+public record ProductComparison(
+    FactProduct WoolworthsProduct,
+    PricedProduct WoolworthsPrice,
+    FactProduct ColesProduct,
+    PricedProduct ColesPrice,
+    decimal PriceDifference,
+    decimal PercentageDifference,
+    string CheaperStore
 );
 
 public record FactProductPair(

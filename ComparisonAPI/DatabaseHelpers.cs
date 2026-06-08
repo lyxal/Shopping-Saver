@@ -15,11 +15,11 @@ public class UsersDatabase
 
     public string UserIDFromEmail(string email)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("email", email);
+        var filter = Builders<BsonDocument>.Filter.Eq("Email", email);
         var userDoc = _usersCollection.Find(filter).FirstOrDefault();
-        if (userDoc != null && userDoc.Contains("userID"))
+        if (userDoc != null && userDoc.Contains("UserID"))
         {
-            return userDoc["userID"].AsString;
+            return userDoc["UserID"].AsString;
         }
         else
         {
@@ -27,8 +27,8 @@ public class UsersDatabase
             var newUserID = Guid.NewGuid().ToString();
             var newUserDoc = new BsonDocument
             {
-                { "email", email },
-                { "userID", newUserID }
+                { "Email", email },
+                { "UserID", newUserID }
             };
             _usersCollection.InsertOne(newUserDoc);
             return newUserID;
@@ -57,10 +57,10 @@ public class ListsDatabase
         var newListID = Guid.NewGuid().ToString();
         var newListDoc = new BsonDocument
         {
-            { "userID", userID },
-            { "listName", listName },
-            { "listID", newListID },
-            { "products", new BsonArray() }
+            { "UserID", userID },
+            { "ListName", listName },
+            { "ListID", newListID },
+            { "Products", new BsonArray() }
         };
         _listsCollection.InsertOne(newListDoc);
         return newListID;
@@ -68,7 +68,7 @@ public class ListsDatabase
 
     public List<FactProductPair>? GetListForUser(string userID, string listID)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("userID", userID) & Builders<BsonDocument>.Filter.Eq("listID", listID);
+        var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID) & Builders<BsonDocument>.Filter.Eq("ListID", listID);
         var listDoc = _listsCollection.Find(filter).FirstOrDefault();
 
         if (listDoc == null)
@@ -77,25 +77,25 @@ public class ListsDatabase
         }
 
         var products = new List<FactProductPair>();
-        foreach (var productDoc in listDoc["products"].AsBsonArray)
+        foreach (var productDoc in listDoc["Products"].AsBsonArray)
         {
-            var woolworthsProductDoc = productDoc["woolworths"].AsBsonDocument;
-            var colesProductDoc = productDoc["coles"].AsBsonDocument;
+            var woolworthsProductDoc = productDoc["Woolworths"].AsBsonDocument;
+            var colesProductDoc = productDoc["Coles"].AsBsonDocument;
 
             var woolworthsProduct = new FactProduct(
-                woolworthsProductDoc["productID"].AsString,
-                woolworthsProductDoc["name"].AsString,
-                woolworthsProductDoc["store"].AsString,
-                woolworthsProductDoc["link"].AsString,
-                woolworthsProductDoc["imageLink"].AsString
+                woolworthsProductDoc["ProductID"].AsString,
+                woolworthsProductDoc["Name"].AsString,
+                woolworthsProductDoc["Store"].AsString,
+                woolworthsProductDoc["Link"].AsString,
+                woolworthsProductDoc["ImageLink"].AsString
             );
 
             var colesProduct = new FactProduct(
-                colesProductDoc["productID"].AsString,
-                colesProductDoc["name"].AsString,
-                colesProductDoc["store"].AsString,
-                colesProductDoc["link"].AsString,
-                colesProductDoc["imageLink"].AsString
+                colesProductDoc["ProductID"].AsString,
+                colesProductDoc["Name"].AsString,
+                colesProductDoc["Store"].AsString,
+                colesProductDoc["Link"].AsString,
+                colesProductDoc["ImageLink"].AsString
             );
 
             products.Add(new FactProductPair(woolworthsProduct, colesProduct));
@@ -105,8 +105,8 @@ public class ListsDatabase
 
     public void AddComparisonToList(string userID, string listID, FactProduct colesProduct, FactProduct woolworthsProduct)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("userID", userID) & Builders<BsonDocument>.Filter.Eq("listID", listID);
-        var update = Builders<BsonDocument>.Update.Push("products", new BsonDocument
+        var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID) & Builders<BsonDocument>.Filter.Eq("ListID", listID);
+        var update = Builders<BsonDocument>.Update.Push("Products", new BsonDocument
         {
             {"Coles", colesProduct.ProductID},
             {"Woolworths", woolworthsProduct.ProductID}
@@ -116,9 +116,9 @@ public class ListsDatabase
 
     public List<string> GetListsForUser(string userID)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("userID", userID);
+        var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID);
         var listDocs = _listsCollection.Find(filter).ToList();
-        return listDocs.Select(doc => doc["listID"].AsString).ToList();
+        return listDocs.Select(doc => doc["ListID"].AsString).ToList();
     }
 }
 
@@ -141,11 +141,11 @@ public class FactProductsDatabase
         if (productDoc != null)
         {
             return new FactProduct(
-                productDoc["productID"].AsString,
-                productDoc["name"].AsString,
-                productDoc["store"].AsString,
-                productDoc["link"].AsString,
-                productDoc["imageLink"].AsString
+                productDoc["ProductID"].AsString,
+                productDoc["Name"].AsString,
+                productDoc["Store"].AsString,
+                productDoc["Link"].AsString,
+                productDoc["ImageLink"].AsString
             );
         }
         else
@@ -153,11 +153,11 @@ public class FactProductsDatabase
             var woolworthsProduct = SupermarketAPI.GetWoolworthsProductFor(productLink);
             _productsCollection.InsertOne(new BsonDocument
             {
-                { "productID", woolworthsProduct.ProductID },
-                { "name", woolworthsProduct.Name },
-                { "store", woolworthsProduct.Store },
-                { "link", woolworthsProduct.Link },
-                { "imageLink", woolworthsProduct.ImageLink }
+                { "ProductID", woolworthsProduct.ProductID },
+                { "Name", woolworthsProduct.Name },
+                { "Store", woolworthsProduct.Store },
+                { "Link", woolworthsProduct.Link },
+                { "ImageLink", woolworthsProduct.ImageLink }
             });
             return woolworthsProduct;
         }
@@ -165,16 +165,16 @@ public class FactProductsDatabase
 
     public FactProduct GetOrFetchFromColesLink(string productLink)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("link", productLink);
+        var filter = Builders<BsonDocument>.Filter.Eq("Link", productLink);
         var productDoc = _productsCollection.Find(filter).FirstOrDefault();
         if (productDoc != null)
         {
             return new FactProduct(
-                productDoc["productID"].AsString,
-                productDoc["name"].AsString,
-                productDoc["store"].AsString,
-                productDoc["link"].AsString,
-                productDoc["imageLink"].AsString
+                productDoc["ProductID"].AsString,
+                productDoc["Name"].AsString,
+                productDoc["Store"].AsString,
+                productDoc["Link"].AsString,
+                productDoc["ImageLink"].AsString
             );
         }
         else
@@ -182,15 +182,60 @@ public class FactProductsDatabase
             var colesProduct = SupermarketAPI.GetColesProductFor(productLink);
             _productsCollection.InsertOne(new BsonDocument
             {
-                { "productID", colesProduct.ProductID },
-                { "name", colesProduct.Name },
-                { "store", colesProduct.Store },
-                { "link", colesProduct.Link },
-                { "imageLink", colesProduct.ImageLink }
+                { "ProductID", colesProduct.ProductID },
+                { "Name", colesProduct.Name },
+                { "Store", colesProduct.Store },
+                { "Link", colesProduct.Link },
+                { "ImageLink", colesProduct.ImageLink }
             });
             return colesProduct;
         }
     }
 
 
+}
+
+public class PricedProductsDatabase
+{
+    private readonly MongoClient _client;
+    private readonly IMongoDatabase _database;
+    private readonly IMongoCollection<BsonDocument> _productsCollection;
+    public PricedProductsDatabase(MongoClient client)
+    {
+        _client = client;
+        _database = _client.GetDatabase("Products");
+        _productsCollection = _database.GetCollection<BsonDocument>("pricedProducts");
+    }
+
+    public Dictionary<string, PricedProduct> GetPricesForProducts(List<FactProduct> productIDs)
+    {
+        var filter = Builders<BsonDocument>.Filter.In("ProductID", productIDs.Select(p => p.ProductID));
+        var productDocs = _productsCollection.Find(filter).ToList();
+        var prices = new Dictionary<string, PricedProduct>();
+        foreach (var productDoc in productDocs)
+        {
+            var pricedProduct = new PricedProduct(
+                productDoc["ProductID"].AsString,
+                productDoc["Store"].AsString,
+                productDoc["NormalPrice"].AsDecimal,
+                productDoc["SalePrice"].AsDecimal,
+                productDoc["LastChecked"].ToUniversalTime(),
+                productDoc["ProductLink"].AsString
+            );
+            prices[pricedProduct.ProductID] = pricedProduct;
+        }
+        return prices;
+    }
+
+    public void UpsertPrice(PricedProduct pricedProduct)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("ProductID", pricedProduct.ProductID);
+        var update = Builders<BsonDocument>.Update
+            .Set("Store", pricedProduct.Store)
+            .Set("NormalPrice", pricedProduct.NormalPrice)
+            .Set("SalePrice", pricedProduct.SalePrice)
+            .Set("LastChecked", pricedProduct.LastChecked)
+            .Set("ProductLink", pricedProduct.ProductLink);
+        _productsCollection.UpdateOne(filter, update, new UpdateOptions { IsUpsert = true });
+    }
 }
