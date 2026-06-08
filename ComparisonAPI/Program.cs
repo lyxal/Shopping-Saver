@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
+
+
+HashSet<string> SupportedStores = ["Woolworths", "Coles"];
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +18,21 @@ settings.ServerApi = new ServerApi(ServerApiVersion.V1);
 
 var client = new MongoClient(settings);
 
+// Ping the database to ensure a connection is established before handling requests.
+try
+{
+    client.GetDatabase("admin").RunCommand<BsonDocument>(new BsonDocument { { "ping", 1 } });
+    Console.WriteLine("Successfully connected to MongoDB.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error connecting to MongoDB: {ex.Message}");
+    throw; // Re-throw the exception to prevent the application from starting without a database connection.
+}
+
 var usersDb = new UsersDatabase(client);
 var listsDb = new ListsDatabase(client);
+var factProductsDb = new FactProductsDatabase(client);
 
 var app = builder.Build();
 app.UseHttpsRedirection();
@@ -36,51 +53,54 @@ app.MapPost("/createlist", async (CreateListRequest request) =>
 
 app.MapGet("/getlist/{userID}/{listID}", async (string userID, string listID) =>
 {
-    var list = listsDb.GetListForUser(userID, listID);
-    if (list != null)
-    {
-        return Results.Ok(list);
-    }
-    else
-    {
-        return Results.NotFound();
-    }
+    return Results.Ok(listsDb.GetListForUser(userID, listID));
 });
 
 app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest request) =>
 {
-    if (request.ProductLinks == null || request.ProductLinks.Count == 0)
+    var links = request.ProductLinks;
+    FactProduct woolworthsProduct;
+    FactProduct colesProduct;
+
+    links.TryGetValue("Woolworths", out string? wLink);
+    links.TryGetValue("Coles", out string? cLink);
+
+    // Make sure that both links definitely map to a FactProduct,
+    // and then get the product IDs of both products.
+
+    if (wLink != null && cLink != null)
     {
-        return Results.BadRequest(new { Message = "ProductLinks list cannot be empty." });
+        // We know both links, so just ensure the fact products exist.
+        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(wLink);
+        colesProduct = factProductsDb.GetOrFetchFromColesLink(cLink);
     }
-    if (request.ProductLinks.Count == 1)
+    else if (wLink != null)
     {
-        if (request.ProductLinks[0].ContainsKey("Woolworths"))
-        {
-            var products = ProductHelpers.GetProductsFromOnlyWoolworthsLink(request.ProductLinks[0]["Woolworths"]);
-            // Add products.Item1 and products.Item2 to the list in the database, handling nulls appropriately.
-        }
-        else if (request.ProductLinks[0].ContainsKey("Coles"))
-        {
-            var products = ProductHelpers.GetProductsFromOnlyColesLink(request.ProductLinks[0]["Coles"]);
-            // Add products.Item1 and products.Item2 to the list in the database, handling nulls appropriately.
-        }
-        else
-        {
-            return Results.BadRequest(new { Message = "Unsupported store link. Only Woolworths and Coles links are supported." });
-        }
+        // Only know woolworths link, so ensure the woolworths product, and then
+        // use its name to find the coles link and product.
+        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(wLink);
+        var colesLink = SupermarketAPI.FindProductByNameAtColes(woolworthsProduct.Name);
+        if (colesLink == null) return Results.Problem("Could not find product at Coles.");
+        colesProduct = factProductsDb.GetOrFetchFromColesLink(colesLink);
+
+    }
+    else if (cLink != null)
+    {
+        // Only know coles link, so ensure the coles product, and then
+        // use its name to find the woolworths link and product.
+        colesProduct = factProductsDb.GetOrFetchFromColesLink(cLink);
+        var woolworthsLink = SupermarketAPI.FindProductByNameAtWoolworths(colesProduct.Name);
+        if (woolworthsLink == null) return Results.Problem("Could not find product at Woolworths.");
+        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(woolworthsLink);
     }
     else
     {
-        // The best case - we have both links, so we can be confident in our product matching
-        // TODO: Cache based on link. Like (url -> product info)
-        var woolworthsLink = request.ProductLinks[0].ContainsKey("Woolworths") ? request.ProductLinks[0]["Woolworths"] : request.ProductLinks[1]["Woolworths"];
-        var colesLink = request.ProductLinks[0].ContainsKey("Coles") ? request.ProductLinks[0]["Coles"] : request.ProductLinks[1]["Coles"];
-        var productsFromWoolworthsLink = ProductHelpers.GetProductFromWoolworthsURL(woolworthsLink);
-        var productsFromColesLink = ProductHelpers.GetProductFromColesURL(colesLink);
-        // If both are null, we have a problem - return an error                
+        return Results.BadRequest("No product links provided.");
     }
-    return Results.Ok(new { Message = "This endpoint is a placeholder and does not yet have functionality." });
+
+    listsDb.AddComparisonToList(request.UserID, request.ListID, colesProduct, woolworthsProduct);
+
+    return Results.Ok(new { Message = "Product added successfully." });
 });
 
 app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>

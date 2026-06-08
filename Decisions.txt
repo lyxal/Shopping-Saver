@@ -1,0 +1,2 @@
+- Store the product links flat in FactProduct to make checking for existing
+products more efficient. Can do many check 

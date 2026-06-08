@@ -38,6 +38,10 @@ public class UsersDatabase
 
 public class ListsDatabase
 {
+    // In this system, a user's product list is always product facts.
+    // The comparison endpoint will get pricing from the PricedProducts collection.
+    // Lists thus do not need to store pricing information. In fact, it would be
+    // incorrect to store pricing in the user lists - that would lead to stale data and incorrect comparisons.
     private readonly MongoClient _client;
     private readonly IMongoDatabase _database;
     private readonly IMongoCollection<BsonDocument> _listsCollection;
@@ -62,7 +66,7 @@ public class ListsDatabase
         return newListID;
     }
 
-    public UserProductList? GetListForUser(string userID, string listID)
+    public List<FactProductPair>? GetListForUser(string userID, string listID)
     {
         var filter = Builders<BsonDocument>.Filter.Eq("userID", userID) & Builders<BsonDocument>.Filter.Eq("listID", listID);
         var listDoc = _listsCollection.Find(filter).FirstOrDefault();
@@ -72,20 +76,58 @@ public class ListsDatabase
             return null;
         }
 
-        var products = new List<ProductInfo>();
+        var products = new List<FactProductPair>();
         foreach (var productDoc in listDoc["products"].AsBsonArray)
         {
-            products.Add(new ProductInfo(
-                productDoc["productID"].AsString,
-                productDoc["storeID"].AsString,
-                productDoc["name"].AsString,
-                productDoc["was"].AsDecimal,
-                productDoc["now"].AsDecimal,
-                productDoc["diff"].AsDecimal,
-                (DateTime)productDoc["dateLastChecked"]
-            ));
+            var woolworthsProductDoc = productDoc["woolworths"].AsBsonDocument;
+            var colesProductDoc = productDoc["coles"].AsBsonDocument;
+
+            var woolworthsProduct = new FactProduct(
+                woolworthsProductDoc["productID"].AsString,
+                woolworthsProductDoc["name"].AsString,
+                woolworthsProductDoc["store"].AsString,
+                woolworthsProductDoc["link"].AsString,
+                woolworthsProductDoc["imageLink"].AsString
+            );
+
+            var colesProduct = new FactProduct(
+                colesProductDoc["productID"].AsString,
+                colesProductDoc["name"].AsString,
+                colesProductDoc["store"].AsString,
+                colesProductDoc["link"].AsString,
+                colesProductDoc["imageLink"].AsString
+            );
+
+            products.Add(new FactProductPair(woolworthsProduct, colesProduct));
         }
-        return new UserProductList(listDoc["listID"].AsString, listDoc["listName"].AsString, products);
+        return products;
+    }
+
+    public void AddComparisonToList(string userID, string listID, FactProduct colesProduct, FactProduct woolworthsProduct)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("userID", userID) & Builders<BsonDocument>.Filter.Eq("listID", listID);
+        var update = Builders<BsonDocument>.Update.Push("products", new BsonDocument
+        {
+            { "woolworths", new BsonDocument
+                {
+                    { "productID", woolworthsProduct.ProductID },
+                    { "name", woolworthsProduct.Name },
+                    { "store", woolworthsProduct.Store },
+                    { "link", woolworthsProduct.Link },
+                    { "imageLink", woolworthsProduct.ImageLink }
+                }
+            },
+            { "coles", new BsonDocument
+                {
+                    { "productID", colesProduct.ProductID },
+                    { "name", colesProduct.Name },
+                    { "store", colesProduct.Store },
+                    { "link", colesProduct.Link },
+                    { "imageLink", colesProduct.ImageLink }
+                }
+            }
+        });
+        _listsCollection.UpdateOne(filter, update);
     }
 
     public List<String> GetListsForUser(string userID)
@@ -96,15 +138,57 @@ public class ListsDatabase
     }
 }
 
-public class ProductsDatabase
+public class FactProductsDatabase
 {
     private readonly MongoClient _client;
     private readonly IMongoDatabase _database;
     private readonly IMongoCollection<BsonDocument> _productsCollection;
-    public ProductsDatabase(MongoClient client)
+    public FactProductsDatabase(MongoClient client)
     {
         _client = client;
         _database = _client.GetDatabase("Products");
-        _productsCollection = _database.GetCollection<BsonDocument>("rawProducts");
+        _productsCollection = _database.GetCollection<BsonDocument>("factProducts");
     }
+
+    public FactProduct GetOrFetchFromWoolworthsLink(string productLink)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("link", productLink);
+        var productDoc = _productsCollection.Find(filter).FirstOrDefault();
+        if (productDoc != null)
+        {
+            return new FactProduct(
+                productDoc["productID"].AsString,
+                productDoc["name"].AsString,
+                productDoc["store"].AsString,
+                productDoc["link"].AsString,
+                productDoc["imageLink"].AsString
+            );
+        }
+        else
+        {
+            return SupermarketAPI.GetWoolworthsProductFor(productLink);
+        }
+    }
+
+    public FactProduct GetOrFetchFromColesLink(string productLink)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("link", productLink);
+        var productDoc = _productsCollection.Find(filter).FirstOrDefault();
+        if (productDoc != null)
+        {
+            return new FactProduct(
+                productDoc["productID"].AsString,
+                productDoc["name"].AsString,
+                productDoc["store"].AsString,
+                productDoc["link"].AsString,
+                productDoc["imageLink"].AsString
+            );
+        }
+        else
+        {
+            return SupermarketAPI.GetColesProductFor(productLink);
+        }
+    }
+
+
 }
