@@ -56,6 +56,13 @@ export default function ModifyListScreen({
 
   const title = useMemo(() => `Editing “${list.ListName}”`, [list.ListName]);
 
+  const detectStoreFromLink = (link: string): string | null => {
+    if (!link) return null;
+    if (link.includes("coles.com.au") || link.includes("coles")) return "Coles";
+    if (link.includes("woolworths.com.au") || link.includes("woolworths")) return "Woolworths";
+    return null;
+  };
+
   const openAddOverlay = () => {
     setEditingProductId(undefined);
     setOverlayMode("add");
@@ -160,11 +167,16 @@ export default function ModifyListScreen({
         <View style={styles.overlayScrim}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeOverlay} />
           <View style={styles.overlayCard}>
-            <Text style={styles.overlayTitle}>
-              {overlayMode === "add" ? "Enter Product Information" : "Edit Product Information"}
-            </Text>
+            <View style={styles.overlayHeader}>
+              <Text style={styles.overlayTitle}>
+                {overlayMode === "add" ? "Add Product" : "Edit Product"}
+              </Text>
+              <Pressable style={styles.overlayCloseButton} onPress={closeOverlay}>
+                <Text style={styles.overlayCloseButtonText}>✕</Text>
+              </Pressable>
+            </View>
 
-            <View style={styles.modeRow}>
+            <View style={styles.overlayModeRow}>
               <ToggleChip
                 label="By Name"
                 active={entryMode === "name"}
@@ -177,76 +189,135 @@ export default function ModifyListScreen({
               />
             </View>
 
-            <View style={styles.coverageRow}>
-              <ToggleChip
-                label="Both Stores"
-                active={draft.coverage === "both"}
-                onPress={() => onDraftChange("coverage", "both")}
-              />
-              <ToggleChip
-                label="Coles"
-                active={draft.coverage === "coles"}
-                onPress={() => onDraftChange("coverage", "coles")}
-              />
-              <ToggleChip
-                label="Woolworths"
-                active={draft.coverage === "woolworths"}
-                onPress={() => onDraftChange("coverage", "woolworths")}
-              />
+            <View style={styles.overlayCoverageRow}>
+              {entryMode === "name" ? (
+                <>
+                  <ToggleChip
+                    label="Same name"
+                    active={draft.coverage === "both"}
+                    onPress={() => onDraftChange("coverage", "both")}
+                  />
+                  <ToggleChip
+                    label="Different names"
+                    active={draft.coverage === "coles"}
+                    onPress={() => onDraftChange("coverage", "coles")}
+                  />
+                </>
+              ) : (
+                <>
+                  <ToggleChip
+                    label="One link"
+                    active={draft.coverage === "both"}
+                    onPress={() => onDraftChange("coverage", "both")}
+                  />
+                  <ToggleChip
+                    label="Both links"
+                    active={draft.coverage === "coles"}
+                    onPress={() => onDraftChange("coverage", "coles")}
+                  />
+                </>
+              )}
             </View>
 
-            <Text style={styles.fieldLabel}>
-              {entryMode === "name" ? "Product Name" : "Product Link"}
-            </Text>
+            <View style={styles.overlayFieldSection}>
+              <Text style={styles.overlayFieldLabel}>
+                {entryMode === "name" ? "Product Name" : "Product Link"}
+              </Text>
 
-            {draft.coverage === "both" ? (
-              <View style={styles.dualFields}>
-                <TextInput
-                  value={draft.coles}
-                  onChangeText={(value) => onDraftChange("coles", value)}
-                  placeholder={entryMode === "name" ? "Coles value" : "Coles link"}
-                  placeholderTextColor={palette.muted}
-                  autoCapitalize="none"
-                  style={styles.overlayInput}
-                />
-                <TextInput
-                  value={draft.woolworths}
-                  onChangeText={(value) => onDraftChange("woolworths", value)}
-                  placeholder={entryMode === "name" ? "Woolworths value" : "Woolworths link"}
-                  placeholderTextColor={palette.muted}
-                  autoCapitalize="none"
-                  style={styles.overlayInput}
-                />
-              </View>
-            ) : draft.coverage === "coles" ? (
-              <TextInput
-                value={draft.coles}
-                onChangeText={(value) => onDraftChange("coles", value)}
-                placeholder={entryMode === "name" ? "Coles value" : "Coles product link"}
-                placeholderTextColor={palette.muted}
-                autoCapitalize="none"
-                style={styles.overlayInput}
-              />
-            ) : (
-              <TextInput
-                value={draft.woolworths}
-                onChangeText={(value) => onDraftChange("woolworths", value)}
-                placeholder={entryMode === "name" ? "Woolworths value" : "Woolworths product link"}
-                placeholderTextColor={palette.muted}
-                autoCapitalize="none"
-                style={styles.overlayInput}
-              />
-            )}
-
-            <Pressable style={styles.submitButton} onPress={submitOverlay}>
-              {loading ? (
-                <ActivityIndicator color={palette.black} />
+              {entryMode === "name" ? (
+                <>
+                  {draft.coverage === "both" ? (
+                    <TextInput
+                      value={draft.coles}
+                      onChangeText={(value) => onDraftChange("coles", value)}
+                      placeholder="Enter product name"
+                      placeholderTextColor={palette.muted}
+                      autoCapitalize="words"
+                      style={styles.overlayInput}
+                    />
+                  ) : (
+                    <View style={styles.dualFieldsContainer}>
+                      <TextInput
+                        value={draft.coles}
+                        onChangeText={(value) => onDraftChange("coles", value)}
+                        placeholder="Coles name"
+                        placeholderTextColor={palette.muted}
+                        autoCapitalize="words"
+                        style={styles.overlayInput}
+                      />
+                      <TextInput
+                        value={draft.woolworths}
+                        onChangeText={(value) => onDraftChange("woolworths", value)}
+                        placeholder="Woolworths name"
+                        placeholderTextColor={palette.muted}
+                        autoCapitalize="words"
+                        style={styles.overlayInput}
+                      />
+                    </View>
+                  )}
+                </>
               ) : (
-                <Text style={styles.submitButtonText}>
-                  {overlayMode === "add" ? "Submit" : "Save"}
-                </Text>
+                <>
+                  {draft.coverage === "both" ? (
+                    <View>
+                      <TextInput
+                        value={draft.coles}
+                        onChangeText={(value) => onDraftChange("coles", value)}
+                        placeholder="Paste link (Coles or Woolworths)"
+                        placeholderTextColor={palette.muted}
+                        autoCapitalize="none"
+                        style={styles.overlayInput}
+                      />
+                      {detectStoreFromLink(draft.coles) ? (
+                        <Text style={styles.storeDetectionHint}>
+                          Detected: {detectStoreFromLink(draft.coles)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : (
+                    <View style={styles.dualFieldsContainer}>
+                      <View>
+                        <TextInput
+                          value={draft.coles}
+                          onChangeText={(value) => onDraftChange("coles", value)}
+                          placeholder="Coles link"
+                          placeholderTextColor={palette.muted}
+                          autoCapitalize="none"
+                          style={styles.overlayInput}
+                        />
+                        {detectStoreFromLink(draft.coles) === "Coles" ? (
+                          <Text style={styles.storeDetectionHint}>✓ Coles link detected</Text>
+                        ) : null}
+                      </View>
+                      <View>
+                        <TextInput
+                          value={draft.woolworths}
+                          onChangeText={(value) => onDraftChange("woolworths", value)}
+                          placeholder="Woolworths link"
+                          placeholderTextColor={palette.muted}
+                          autoCapitalize="none"
+                          style={styles.overlayInput}
+                        />
+                        {detectStoreFromLink(draft.woolworths) === "Woolworths" ? (
+                          <Text style={styles.storeDetectionHint}>✓ Woolworths link detected</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  )}
+                </>
               )}
-            </Pressable>
+            </View>
+
+            <View style={styles.overlayActions}>
+              <Pressable style={[styles.overlayButton, styles.overlayCancelButton]} onPress={closeOverlay}>
+                <Text style={styles.overlayCancelButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[styles.overlayButton, styles.overlaySubmitButton]} onPress={submitOverlay} disabled={loading}>
+                <Text style={styles.overlaySubmitButtonText}>
+                  {loading ? "..." : overlayMode === "add" ? "Add" : "Save"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       ) : null}
@@ -592,16 +663,108 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       borderRadius: 28,
       backgroundColor: palette.background,
       paddingHorizontal: 32,
-      paddingTop: 32,
-      paddingBottom: 36,
-      gap: 20,
+      paddingTop: 28,
+      paddingBottom: 28,
+      gap: 24,
+    },
+    overlayHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
     },
     overlayTitle: {
       color: palette.text,
-      fontSize: 32,
+      fontSize: 28,
       fontWeight: "400",
-      textAlign: "center",
-      letterSpacing: -0.8,
+      letterSpacing: -0.7,
+    },
+    overlayCloseButton: {
+      width: 32,
+      height: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 16,
+      backgroundColor: palette.surface,
+    },
+    overlayCloseButtonText: {
+      color: palette.muted,
+      fontSize: 18,
+      fontWeight: "300",
+    },
+    overlayModeRow: {
+      flexDirection: "row",
+      gap: 12,
+      flexWrap: "wrap",
+      justifyContent: "center",
+    },
+    overlayCoverageRow: {
+      flexDirection: "row",
+      gap: 12,
+      flexWrap: "wrap",
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    overlayFieldSection: {
+      gap: 12,
+    },
+    overlayFieldLabel: {
+      color: palette.muted,
+      fontSize: 13,
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    dualFieldsContainer: {
+      gap: 12,
+    },
+    storeDetectionHint: {
+      color: palette.success,
+      fontSize: 12,
+      fontWeight: "500",
+      marginTop: 6,
+    },
+    overlayInput: {
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      color: palette.text,
+      fontSize: 15,
+      fontWeight: "400",
+      backgroundColor: palette.surface,
+    },
+    overlayActions: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 8,
+    },
+    overlayButton: {
+      flex: 1,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 48,
+    },
+    overlayCancelButton: {
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      backgroundColor: palette.surface,
+    },
+    overlayCancelButtonText: {
+      color: palette.text,
+      fontSize: 15,
+      fontWeight: "500",
+    },
+    overlaySubmitButton: {
+      backgroundColor: palette.accent,
+    },
+    overlaySubmitButtonText: {
+      color: palette.black,
+      fontSize: 15,
+      fontWeight: "600",
     },
     modeRow: {
       flexDirection: "row",
@@ -627,17 +790,6 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     dualFields: {
       gap: 14,
       marginTop: 8,
-    },
-    overlayInput: {
-      borderWidth: 1.5,
-      borderColor: palette.line,
-      borderRadius: 14,
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      color: palette.text,
-      fontSize: 15,
-      fontWeight: "400",
-      backgroundColor: palette.surface,
     },
     submitButton: {
       backgroundColor: palette.white,
