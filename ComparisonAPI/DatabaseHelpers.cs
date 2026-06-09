@@ -60,7 +60,9 @@ public class ListsDatabase
             { "UserID", userID },
             { "ListName", listName },
             { "ListID", newListID },
-            { "Products", new BsonArray() }
+            { "Products", new BsonArray() },
+            { "CreatedAt", DateTime.UtcNow },
+            { "LastEdited", DateTime.UtcNow }
         };
         _listsCollection.InsertOne(newListDoc);
         return newListID;
@@ -98,6 +100,10 @@ public class ListsDatabase
             {"Coles", colesProduct.ProductID},
             {"Woolworths", woolworthsProduct.ProductID}
         });
+
+        // Also update the LastEdited timestamp
+        update = update.Set("LastEdited", DateTime.UtcNow);
+
         _listsCollection.UpdateOne(filter, update);
     }
 
@@ -109,7 +115,10 @@ public class ListsDatabase
         return [.. listDocs.Select(doc => new Dictionary<string, string>
         {
             { "ListID", doc["ListID"].AsString },
-            { "ListName", doc["ListName"].AsString }
+            { "ListName", doc["ListName"].AsString },
+            { "ProductCount", doc["Products"].AsBsonArray.Count.ToString() },
+            { "LastEdited", doc["LastEdited"].ToUniversalTime().ToString("o") },
+            {"CreatedAt", doc["CreatedAt"].ToUniversalTime().ToString("o") }
         })];
     }
 

@@ -26,7 +26,10 @@ All keys must start with a capital letter.
             "Woolworths": "<product ID of woolworths product>"
         },
         ...
-    ]
+    ],
+    "ListName": "<list name>",
+    "CreatedAt": "<utc timestamp of when the list was created>",
+    "LastEdited": "<utc timestamp of when the list was last edited>"
 }
 ```
 
