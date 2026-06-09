@@ -173,3 +173,5 @@ node_modules/
 # ================================
 # React Native .gitignore
 # ================================
+/Shopping Saver
+*.pptx
