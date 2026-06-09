@@ -111,9 +111,12 @@ export default function ModifyListScreen({
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Return to all lists</Text>
-        </Pressable>
+        <View style={styles.topBarLeft}>
+          <Text style={styles.brand}>Open.</Text>
+          <Pressable onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Return to all lists</Text>
+          </Pressable>
+        </View>
         <View style={styles.topBarRight}>
           <Pressable
             style={[styles.compareTopButton, { backgroundColor: palette.accent }]}
@@ -418,13 +421,23 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       marginBottom: 24,
       gap: 16,
     },
+    topBarLeft: {
+      flex: 1,
+    },
+    brand: {
+      color: palette.text,
+      fontSize: 28,
+      fontWeight: "300",
+      letterSpacing: -0.9,
+      marginBottom: 6,
+    },
     backButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: 0,
+      paddingVertical: 6,
     },
     backButtonText: {
       color: palette.accent,
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: "500",
     },
     topBarRight: {

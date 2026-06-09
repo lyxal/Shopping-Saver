@@ -34,7 +34,10 @@ export default function LoadingResultsScreen({
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <Text style={styles.brand}>Comparing Stores</Text>
+        <View>
+          <Text style={styles.brand}>Open.</Text>
+          <Text style={styles.subtitle}>Comparing Stores</Text>
+        </View>
         <ThemeToggle />
       </View>
 
@@ -68,14 +71,23 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     topBar: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: "flex-start",
       marginBottom: 30,
+      gap: 16,
     },
     brand: {
       color: palette.text,
-      fontSize: 48,
+      fontSize: 28,
       fontWeight: "300",
-      letterSpacing: -1.5,
+      letterSpacing: -0.9,
+    },
+    subtitle: {
+      color: palette.muted,
+      fontSize: 13,
+      fontWeight: "500",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginTop: 2,
     },
     hero: {
       alignItems: "center",

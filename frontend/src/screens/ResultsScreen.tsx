@@ -34,8 +34,11 @@ export default function ResultsScreen({
     <View style={styles.page}>
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.pageKicker}>COMPARISON RESULTS</Text>
-          <Text style={styles.listName}>{listName}</Text>
+          <Text style={styles.brand}>Open.</Text>
+          <View style={styles.topBarText}>
+            <Text style={styles.pageKicker}>COMPARISON RESULTS</Text>
+            <Text style={styles.listName}>{listName}</Text>
+          </View>
         </View>
         <View style={styles.topActions}>
           <ThemeToggle />
@@ -152,19 +155,28 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       alignItems: "flex-start",
       marginBottom: 28,
     },
+    brand: {
+      color: palette.text,
+      fontSize: 28,
+      fontWeight: "300",
+      letterSpacing: -0.9,
+      marginBottom: 4,
+    },
+    topBarText: {
+      gap: 2,
+    },
     pageKicker: {
       color: palette.muted,
       fontSize: 12,
       fontWeight: "600",
       textTransform: "uppercase",
       letterSpacing: 0.8,
-      marginBottom: 4,
     },
     listName: {
       color: palette.text,
-      fontSize: 32,
-      fontWeight: "500",
-      letterSpacing: -0.8,
+      fontSize: 24,
+      fontWeight: "600",
+      letterSpacing: -0.6,
     },
     topActions: {
       flexDirection: "row",

@@ -35,7 +35,10 @@ export default function PickListScreen({
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <Text style={styles.title}>Your Lists</Text>
+        <View>
+          <Text style={styles.brand}>Open.</Text>
+          <Text style={styles.title}>Your Lists</Text>
+        </View>
         <View style={styles.topBarActions}>
           <Pressable onPress={() => setShowCreateModal(true)} style={styles.createListButton}>
             <Text style={styles.createListButtonText}>+ New List</Text>
@@ -127,17 +130,23 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     topBar: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: 16,
       marginBottom: 24,
     },
-    title: {
-      flex: 1,
+    brand: {
       color: palette.text,
-      fontSize: 40,
-      lineHeight: 44,
-      fontWeight: "400",
-      letterSpacing: -1.2,
+      fontSize: 32,
+      fontWeight: "300",
+      letterSpacing: -1,
+      marginBottom: 2,
+    },
+    title: {
+      color: palette.text,
+      fontSize: 28,
+      lineHeight: 32,
+      fontWeight: "600",
+      letterSpacing: -0.7,
     },
     topBarActions: {
       flexDirection: "row",

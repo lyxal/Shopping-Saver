@@ -21,7 +21,9 @@ export default function LandingScreen({
     <View style={styles.page}>
       <View style={styles.topBar}>
         <Text style={styles.brand}>Open.</Text>
-        <ThemeToggle />
+        <View style={styles.topBarRight}>
+          <ThemeToggle />
+        </View>
       </View>
 
       <View style={styles.hero}>
@@ -73,6 +75,11 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: 20,
+    },
+    topBarRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
     },
     brand: {
       color: palette.text,
