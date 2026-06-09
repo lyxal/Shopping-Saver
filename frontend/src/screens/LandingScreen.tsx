@@ -38,6 +38,7 @@ export default function LandingScreen({
           <TextInput
             value={email}
             onChangeText={onEmailChange}
+            onSubmitEditing={onContinue}
             placeholder="Email Value"
             placeholderTextColor={palette.muted}
             autoCapitalize="none"

@@ -70,15 +70,6 @@ export default function ResultsScreen({
             rows.map((row, index) => <ComparisonRowCard key={index} row={row} />)
           )}
         </View>
-
-        {compare?.TotalSavings ? (
-          <View style={styles.footerNote}>
-            <Text style={styles.footerText}>
-              Savings tracked by backend: Coles {formatCurrency(compare.TotalSavings.Coles)} ·
-              Woolworths {formatCurrency(compare.TotalSavings.Woolworths)}
-            </Text>
-          </View>
-        ) : null}
       </View>
     </View>
   );
