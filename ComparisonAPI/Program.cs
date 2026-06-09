@@ -74,7 +74,9 @@ app.MapPost("/createlist", async (CreateListRequest request) =>
 
 app.MapGet("/getlist/{userID}/{listID}", async (string userID, string listID) =>
 {
-    return Results.Ok(listsDb.GetListForUser(userID, listID));
+    var productIDs = listsDb.GetListForUser(userID, listID);
+    if (productIDs == null) { return Results.BadRequest("List not found."); }
+    return Results.Ok(factProductsDb.GetProductsByIDs(productIDs));
 });
 
 app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest request) =>
@@ -174,7 +176,10 @@ app.MapPost("/compare", async (CompareRequest request) =>
 {
     var list = listsDb.GetListForUser(request.UserID, request.ListID);
     if (list == null) return Results.Problem("List not found.");
-    var flatProducts = list.SelectMany(p => new[] { p.WoolworthsProduct, p.ColesProduct }).ToList();
+
+    var factProducts = factProductsDb.GetProductsByIDs(list);
+
+    var flatProducts = factProducts.SelectMany(p => new[] { p.Woolworths, p.Coles }).ToList();
     var flatProductHashmap = flatProducts.ToDictionary(p => p.ProductID, p => p);
     Dictionary<string, PricedProduct> prices = pricedProductsDb.GetPricesForProducts(flatProducts);
 
@@ -253,15 +258,15 @@ app.MapPost("/compare", async (CompareRequest request) =>
 
     var comparisons = new List<ProductComparison>();
 
-    foreach (var comparison in list)
+    foreach (var comparison in factProducts)
     {
-        var woolworthsPrice = prices[comparison.WoolworthsProduct.ProductID];
-        var colesPrice = prices[comparison.ColesProduct.ProductID];
+        var woolworthsPrice = prices[comparison.Woolworths.ProductID];
+        var colesPrice = prices[comparison.Coles.ProductID];
 
         comparisons.Add(new ProductComparison(
-            comparison.WoolworthsProduct,
+            comparison.Woolworths,
             woolworthsPrice,
-            comparison.ColesProduct,
+            comparison.Coles,
             colesPrice,
             Math.Abs(woolworthsPrice.SalePrice - colesPrice.SalePrice),
             (woolworthsPrice.SalePrice - colesPrice.SalePrice) / Math.Max(woolworthsPrice.SalePrice, colesPrice.SalePrice) * 100,

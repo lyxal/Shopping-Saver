@@ -66,7 +66,7 @@ public class ListsDatabase
         return newListID;
     }
 
-    public List<FactProductPair>? GetListForUser(string userID, string listID)
+    public List<Dictionary<string, string>>? GetListForUser(string userID, string listID)
     {
         var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID) & Builders<BsonDocument>.Filter.Eq("ListID", listID);
         var listDoc = _listsCollection.Find(filter).FirstOrDefault();
@@ -76,14 +76,18 @@ public class ListsDatabase
             return null;
         }
 
-        /*
-        There is a problem here: I need the API to return a list of FactProduct items.
-        But this class only ever has access to product IDs. I can return a list of
-        product IDs, but something still needs to take those product IDs and
-        transform them. That is for another day. This function will thus not
-        return anything so that it registers as a compile error and something that I need
-        to look at before continuing any further. Okay thank you, have good day.
-        */
+        var productsArray = listDoc["Products"].AsBsonArray;
+        var products = new List<Dictionary<string, string>>();
+        foreach (var product in productsArray)
+        {
+            var productDoc = product.AsBsonDocument;
+            products.Add(new Dictionary<string, string>
+            {
+                { "Coles", productDoc["Coles"].AsString },
+                { "Woolworths", productDoc["Woolworths"].AsString }
+            });
+        }
+        return products;
     }
 
     public void AddComparisonToList(string userID, string listID, FactProduct colesProduct, FactProduct woolworthsProduct)
@@ -180,6 +184,45 @@ public class FactProductsDatabase
         }
     }
 
+    public List<FactProductPair> GetProductsByIDs(List<Dictionary<string, string>> productIDs)
+    {
+        Console.WriteLine("Fetching products for IDs:");
+        foreach (var idPair in productIDs)
+        {
+            Console.WriteLine($"ColesID: {idPair["Coles"]}, WoolworthsID: {idPair["Woolworths"]}");
+        }
+        var filter = Builders<BsonDocument>.Filter.In("ProductID", [.. productIDs.Select(p => p["Coles"]), .. productIDs.Select(p => p["Woolworths"])]);
+        var productDocs = _productsCollection.Find(filter).ToList();
+
+        var products = new List<FactProductPair>();
+        foreach (var productIDPair in productIDs)
+        {
+            var colesProductDoc = productDocs.FirstOrDefault(doc => doc["ProductID"].AsString == productIDPair["Coles"]);
+            var woolworthsProductDoc = productDocs.FirstOrDefault(doc => doc["ProductID"].AsString == productIDPair["Woolworths"]);
+
+            if (colesProductDoc != null && woolworthsProductDoc != null)
+            {
+                var colesProduct = new FactProduct(
+                    colesProductDoc["ProductID"].AsString,
+                    colesProductDoc["Name"].AsString,
+                    colesProductDoc["Store"].AsString,
+                    colesProductDoc["Link"].AsString,
+                    colesProductDoc["ImageLink"].AsString
+                );
+
+                var woolworthsProduct = new FactProduct(
+                    woolworthsProductDoc["ProductID"].AsString,
+                    woolworthsProductDoc["Name"].AsString,
+                    woolworthsProductDoc["Store"].AsString,
+                    woolworthsProductDoc["Link"].AsString,
+                    woolworthsProductDoc["ImageLink"].AsString
+                );
+
+                products.Add(new FactProductPair(colesProduct, woolworthsProduct));
+            }
+        }
+        return products;
+    }
 
 }
 

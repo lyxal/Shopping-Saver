@@ -26,6 +26,6 @@ public record ProductComparison(
 );
 
 public record FactProductPair(
-    FactProduct WoolworthsProduct,
-    FactProduct ColesProduct
+    FactProduct Woolworths,
+    FactProduct Coles
 );

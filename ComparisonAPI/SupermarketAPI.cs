@@ -3,13 +3,18 @@ static class SupermarketAPI
     static public PricedProduct GetWoolworthsPriceFor(string productLink)
     {
         // Placeholder implementation
-        return new PricedProduct(Guid.NewGuid().ToString(), "Woolworths", 10.00m, 8.00m, DateTime.UtcNow, productLink);
+        // Returns random prices for now.
+        decimal normalPrice = (decimal)(Random.Shared.NextDouble() * 20 + 5); // Normal price between $5 and $25
+        decimal salePrice = normalPrice * (decimal)(0.5 + Random.Shared.NextDouble() * 0.5); // Sale price between 50% and 100% of normal price
+        return new PricedProduct(Guid.NewGuid().ToString(), "Woolworths", normalPrice, salePrice, DateTime.UtcNow, productLink);
     }
 
     static public PricedProduct GetColesPriceFor(string productLink)
     {
         // Placeholder implementation
-        return new PricedProduct(Guid.NewGuid().ToString(), "Coles", 9.50m, 7.50m, DateTime.UtcNow, productLink);
+        decimal normalPrice = (decimal)(Random.Shared.NextDouble() * 20 + 5); // Normal price between $5 and $25
+        decimal salePrice = normalPrice * (decimal)(0.5 + Random.Shared.NextDouble() * 0.5); // Sale price between 50% and 100% of normal price
+        return new PricedProduct(Guid.NewGuid().ToString(), "Coles", normalPrice, salePrice, DateTime.UtcNow, productLink);
     }
 
     static public FactProduct GetWoolworthsProductFor(string productLink)
