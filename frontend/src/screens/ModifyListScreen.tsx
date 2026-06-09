@@ -104,8 +104,20 @@ export default function ModifyListScreen({
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <Text style={styles.title}>{title}</Text>
-        <ThemeToggle />
+        <Pressable onPress={onBack} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Return to all lists</Text>
+        </Pressable>
+        <View style={styles.topBarRight}>
+          <Pressable
+            style={[styles.compareTopButton, { backgroundColor: palette.accent }]}
+            onPress={hasResults ? onViewResults : onCompare}
+          >
+            <Text style={styles.compareTopButtonText}>
+              {hasResults ? "View Results" : "Compare"}
+            </Text>
+          </Pressable>
+          <ThemeToggle />
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -113,16 +125,8 @@ export default function ModifyListScreen({
           <View style={styles.headerText}>
             <Text style={styles.pageKicker}>Edit List</Text>
             <Text style={styles.pageSub}>
-              Tap an item to replace it, or use the floating button to add a new product.
+              Tap an item to replace it, or use the button below to add a new product.
             </Text>
-          </View>
-          <View style={styles.headerActions}>
-            <ActionButton label="Back" onPress={onBack} />
-            <ActionButton
-              label={hasResults ? "Results" : "Compare"}
-              onPress={hasResults ? onViewResults : onCompare}
-              filled
-            />
           </View>
         </View>
 
@@ -262,24 +266,33 @@ function EditableItemCard({
   const { palette } = useTheme();
   const styles = useMemo(() => createStyles(palette), [palette]);
   const label = entry.Coles?.Name || entry.Woolworths?.Name || "Item Name";
-  const infoLabel =
-    entry.Coles && entry.Woolworths
-      ? "Exact Coles · Best Match Woolworths"
-      : entry.Coles
-      ? "Coles only"
-      : "Woolworths only";
-  const imageLink = entry.Coles?.ImageLink || entry.Woolworths?.ImageLink;
+  const colesLink = entry.Coles?.Link;
+  const woolworthsLink = entry.Woolworths?.Link;
 
   return (
     <View style={styles.card}>
       <View style={styles.cardLeft}>
-        <ProductThumbnail source={imageLink} fallbackLabel={label.slice(0, 1)} size={60} />
+        <ProductThumbnail source={entry.Coles?.ImageLink || entry.Woolworths?.ImageLink} fallbackLabel={label.slice(0, 1)} size={60} />
       </View>
 
       <View style={styles.cardMiddle}>
         <Text style={styles.cardTitle}>{label}</Text>
         <Text style={styles.cardMeta}>Added just now</Text>
-        <Text style={styles.cardLinks}>{infoLabel}</Text>
+        <View style={styles.cardLinksContainer}>
+          {colesLink ? (
+            <Pressable onPress={() => onViewLink(colesLink)}>
+              <Text style={styles.cardLink}>View at Coles</Text>
+            </Pressable>
+          ) : null}
+          {colesLink && woolworthsLink ? (
+            <Text style={styles.cardLinkSeparator}> · </Text>
+          ) : null}
+          {woolworthsLink ? (
+            <Pressable onPress={() => onViewLink(woolworthsLink)}>
+              <Text style={styles.cardLink}>View at Woolworths</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.cardRight}>
@@ -292,6 +305,12 @@ function EditableItemCard({
       </View>
     </View>
   );
+
+  function onViewLink(link: string) {
+    if (typeof window !== "undefined") {
+      window.open(link, "_blank");
+    }
+  }
 }
 
 function ActionButton({
@@ -324,8 +343,37 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     topBar: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "flex-start",
-      marginBottom: 20,
+      alignItems: "center",
+      marginBottom: 24,
+      gap: 16,
+    },
+    backButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    backButtonText: {
+      color: palette.accent,
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    topBarRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    compareTopButton: {
+      borderWidth: 1.5,
+      borderColor: palette.accent,
+      borderRadius: 12,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    compareTopButtonText: {
+      color: palette.black,
+      fontSize: 14,
+      fontWeight: "600",
     },
     title: {
       color: palette.text,
@@ -335,15 +383,16 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     },
     body: {
       flex: 1,
-      marginTop: 10,
+      marginTop: 0,
       position: "relative",
-      paddingBottom: 140,
+      paddingBottom: 100,
     },
     headerRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
       gap: 24,
+      marginBottom: 20,
     },
     headerText: {
       flex: 1,
@@ -392,20 +441,20 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       fontWeight: "600",
     },
     listColumn: {
-      marginTop: 32,
-      gap: 16,
+      marginTop: 0,
+      gap: 12,
     },
     card: {
-      minHeight: 180,
+      minHeight: 140,
       borderWidth: 1.5,
       borderColor: palette.line,
       borderRadius: 16,
       flexDirection: "row",
-      paddingHorizontal: 20,
-      paddingVertical: 18,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
       alignItems: "center",
       backgroundColor: palette.surface,
-      gap: 20,
+      gap: 16,
     },
     cardLeft: {
       width: 70,
@@ -416,19 +465,37 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       flex: 1,
       alignSelf: "stretch",
       justifyContent: "space-between",
-      paddingVertical: 8,
+      paddingVertical: 4,
     },
     cardTitle: {
       color: palette.text,
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "500",
-      letterSpacing: -0.5,
+      letterSpacing: -0.3,
     },
     cardMeta: {
       color: palette.muted,
       fontSize: 12,
-      marginTop: 4,
+      marginTop: 2,
       fontWeight: "400",
+    },
+    cardLinksContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 6,
+      flexWrap: "wrap",
+    },
+    cardLink: {
+      color: palette.accent,
+      fontSize: 12,
+      textDecorationLine: "underline",
+      fontWeight: "500",
+    },
+    cardLinkSeparator: {
+      color: palette.muted,
+      fontSize: 12,
+      fontWeight: "400",
+      marginHorizontal: 2,
     },
     cardLinks: {
       color: palette.accent,
@@ -438,72 +505,72 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       fontWeight: "400",
     },
     cardRight: {
-      width: 120,
+      width: 100,
       alignSelf: "stretch",
       justifyContent: "center",
       alignItems: "flex-end",
-      gap: 10,
-      paddingVertical: 8,
+      gap: 8,
+      paddingVertical: 4,
     },
     removeButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: palette.danger,
       alignItems: "center",
       justifyContent: "center",
     },
     removeButtonText: {
       color: palette.white,
-      fontSize: 28,
+      fontSize: 24,
       fontWeight: "300",
-      lineHeight: 28,
-      marginTop: -2,
+      lineHeight: 24,
+      marginTop: -1,
     },
     editButton: {
       borderWidth: 1,
       borderColor: palette.line,
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
       backgroundColor: palette.background,
     },
     editButtonText: {
       color: palette.text,
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: "500",
     },
     addButton: {
       position: "absolute",
-      right: 0,
-      bottom: 0,
+      right: 24,
+      bottom: 28,
       backgroundColor: palette.surface,
-      borderRadius: 16,
+      borderRadius: 12,
       flexDirection: "row",
       alignItems: "center",
-      paddingLeft: 22,
-      paddingRight: 12,
-      paddingVertical: 14,
-      gap: 16,
+      paddingLeft: 16,
+      paddingRight: 10,
+      paddingVertical: 10,
+      gap: 12,
       borderWidth: 1.5,
       borderColor: palette.line,
     },
     addButtonLabel: {
       color: palette.text,
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: "500",
     },
     addBubble: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       backgroundColor: palette.black,
       alignItems: "center",
       justifyContent: "center",
     },
     addBubbleText: {
       color: palette.white,
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: "300",
     },
     overlayScrim: {
