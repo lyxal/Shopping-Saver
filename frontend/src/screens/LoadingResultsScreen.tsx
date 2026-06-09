@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useEffect, useState } from "react";
+import { StyleSheet, Text, View, Animated } from "react-native";
 import { FeatureArtwork, ThemeToggle } from "../components/common";
 import { useTheme } from "../lib/theme";
 
@@ -10,6 +10,26 @@ export default function LoadingResultsScreen({
 }) {
   const { palette } = useTheme();
   const styles = useMemo(() => createStyles(palette), [palette]);
+  const [spinAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [spinAnim]);
+
+  const spinInterpolate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  const spinStyle = {
+    transform: [{ rotate: spinInterpolate }],
+  };
 
   return (
     <View style={styles.page}>
@@ -23,11 +43,11 @@ export default function LoadingResultsScreen({
         <Text style={styles.heroSub}>{listName}</Text>
       </View>
 
-      <View style={styles.progressRing}>
+      <Animated.View style={[styles.progressRing, spinStyle]}>
         <View style={styles.progressInner}>
-          <Text style={styles.progressText}>40%</Text>
+          <Text style={styles.progressText}>⟳</Text>
         </View>
-      </View>
+      </Animated.View>
 
       <View style={styles.planetFrame}>
         <FeatureArtwork fallback="comparison" />
@@ -76,29 +96,26 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       fontWeight: "400",
     },
     progressRing: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-      borderWidth: 8,
-      borderColor: palette.line,
-      borderTopColor: palette.accent,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
       alignSelf: "center",
-      marginTop: 30,
-      marginBottom: 30,
+      marginTop: 40,
+      marginBottom: 40,
       alignItems: "center",
       justifyContent: "center",
     },
     progressInner: {
-      width: 90,
-      height: 90,
-      borderRadius: 45,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
       alignItems: "center",
       justifyContent: "center",
     },
     progressText: {
-      color: palette.text,
-      fontSize: 32,
-      fontWeight: "400",
+      color: palette.accent,
+      fontSize: 48,
+      fontWeight: "300",
     },
     planetFrame: {
       marginTop: 20,
