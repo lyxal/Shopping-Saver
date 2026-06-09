@@ -56,6 +56,13 @@ export default function ModifyListScreen({
 
   const title = useMemo(() => `Editing “${list.ListName}”`, [list.ListName]);
 
+  const detectStoreFromLink = (link: string): string | null => {
+    if (!link) return null;
+    if (link.includes("coles.com.au") || link.includes("coles")) return "Coles";
+    if (link.includes("woolworths.com.au") || link.includes("woolworths")) return "Woolworths";
+    return null;
+  };
+
   const openAddOverlay = () => {
     setEditingProductId(undefined);
     setOverlayMode("add");
@@ -104,8 +111,23 @@ export default function ModifyListScreen({
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <Text style={styles.title}>{title}</Text>
-        <ThemeToggle />
+        <View style={styles.topBarLeft}>
+          <Text style={styles.brand}>Open.</Text>
+          <Pressable onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Return to all lists</Text>
+          </Pressable>
+        </View>
+        <View style={styles.topBarRight}>
+          <Pressable
+            style={[styles.compareTopButton, { backgroundColor: palette.accent }]}
+            onPress={hasResults ? onViewResults : onCompare}
+          >
+            <Text style={styles.compareTopButtonText}>
+              {hasResults ? "View Results" : "Compare"}
+            </Text>
+          </Pressable>
+          <ThemeToggle />
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -113,16 +135,8 @@ export default function ModifyListScreen({
           <View style={styles.headerText}>
             <Text style={styles.pageKicker}>Edit List</Text>
             <Text style={styles.pageSub}>
-              Tap an item to replace it, or use the floating button to add a new product.
+              Tap an item to replace it, or use the button below to add a new product.
             </Text>
-          </View>
-          <View style={styles.headerActions}>
-            <ActionButton label="Back" onPress={onBack} />
-            <ActionButton
-              label={hasResults ? "Results" : "Compare"}
-              onPress={hasResults ? onViewResults : onCompare}
-              filled
-            />
           </View>
         </View>
 
@@ -156,11 +170,16 @@ export default function ModifyListScreen({
         <View style={styles.overlayScrim}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeOverlay} />
           <View style={styles.overlayCard}>
-            <Text style={styles.overlayTitle}>
-              {overlayMode === "add" ? "Enter Product Information" : "Edit Product Information"}
-            </Text>
+            <View style={styles.overlayHeader}>
+              <Text style={styles.overlayTitle}>
+                {overlayMode === "add" ? "Add Product" : "Edit Product"}
+              </Text>
+              <Pressable style={styles.overlayCloseButton} onPress={closeOverlay}>
+                <Text style={styles.overlayCloseButtonText}>✕</Text>
+              </Pressable>
+            </View>
 
-            <View style={styles.modeRow}>
+            <View style={styles.overlayModeRow}>
               <ToggleChip
                 label="By Name"
                 active={entryMode === "name"}
@@ -173,76 +192,135 @@ export default function ModifyListScreen({
               />
             </View>
 
-            <View style={styles.coverageRow}>
-              <ToggleChip
-                label="Both Stores"
-                active={draft.coverage === "both"}
-                onPress={() => onDraftChange("coverage", "both")}
-              />
-              <ToggleChip
-                label="Coles"
-                active={draft.coverage === "coles"}
-                onPress={() => onDraftChange("coverage", "coles")}
-              />
-              <ToggleChip
-                label="Woolworths"
-                active={draft.coverage === "woolworths"}
-                onPress={() => onDraftChange("coverage", "woolworths")}
-              />
+            <View style={styles.overlayCoverageRow}>
+              {entryMode === "name" ? (
+                <>
+                  <ToggleChip
+                    label="Same name"
+                    active={draft.coverage === "both"}
+                    onPress={() => onDraftChange("coverage", "both")}
+                  />
+                  <ToggleChip
+                    label="Different names"
+                    active={draft.coverage === "coles"}
+                    onPress={() => onDraftChange("coverage", "coles")}
+                  />
+                </>
+              ) : (
+                <>
+                  <ToggleChip
+                    label="One link"
+                    active={draft.coverage === "both"}
+                    onPress={() => onDraftChange("coverage", "both")}
+                  />
+                  <ToggleChip
+                    label="Both links"
+                    active={draft.coverage === "coles"}
+                    onPress={() => onDraftChange("coverage", "coles")}
+                  />
+                </>
+              )}
             </View>
 
-            <Text style={styles.fieldLabel}>
-              {entryMode === "name" ? "Product Name" : "Product Link"}
-            </Text>
+            <View style={styles.overlayFieldSection}>
+              <Text style={styles.overlayFieldLabel}>
+                {entryMode === "name" ? "Product Name" : "Product Link"}
+              </Text>
 
-            {draft.coverage === "both" ? (
-              <View style={styles.dualFields}>
-                <TextInput
-                  value={draft.coles}
-                  onChangeText={(value) => onDraftChange("coles", value)}
-                  placeholder={entryMode === "name" ? "Coles value" : "Coles link"}
-                  placeholderTextColor={palette.muted}
-                  autoCapitalize="none"
-                  style={styles.overlayInput}
-                />
-                <TextInput
-                  value={draft.woolworths}
-                  onChangeText={(value) => onDraftChange("woolworths", value)}
-                  placeholder={entryMode === "name" ? "Woolworths value" : "Woolworths link"}
-                  placeholderTextColor={palette.muted}
-                  autoCapitalize="none"
-                  style={styles.overlayInput}
-                />
-              </View>
-            ) : draft.coverage === "coles" ? (
-              <TextInput
-                value={draft.coles}
-                onChangeText={(value) => onDraftChange("coles", value)}
-                placeholder={entryMode === "name" ? "Coles value" : "Coles product link"}
-                placeholderTextColor={palette.muted}
-                autoCapitalize="none"
-                style={styles.overlayInput}
-              />
-            ) : (
-              <TextInput
-                value={draft.woolworths}
-                onChangeText={(value) => onDraftChange("woolworths", value)}
-                placeholder={entryMode === "name" ? "Woolworths value" : "Woolworths product link"}
-                placeholderTextColor={palette.muted}
-                autoCapitalize="none"
-                style={styles.overlayInput}
-              />
-            )}
-
-            <Pressable style={styles.submitButton} onPress={submitOverlay}>
-              {loading ? (
-                <ActivityIndicator color={palette.black} />
+              {entryMode === "name" ? (
+                <>
+                  {draft.coverage === "both" ? (
+                    <TextInput
+                      value={draft.coles}
+                      onChangeText={(value) => onDraftChange("coles", value)}
+                      placeholder="Enter product name"
+                      placeholderTextColor={palette.muted}
+                      autoCapitalize="words"
+                      style={styles.overlayInput}
+                    />
+                  ) : (
+                    <View style={styles.dualFieldsContainer}>
+                      <TextInput
+                        value={draft.coles}
+                        onChangeText={(value) => onDraftChange("coles", value)}
+                        placeholder="Coles name"
+                        placeholderTextColor={palette.muted}
+                        autoCapitalize="words"
+                        style={styles.overlayInput}
+                      />
+                      <TextInput
+                        value={draft.woolworths}
+                        onChangeText={(value) => onDraftChange("woolworths", value)}
+                        placeholder="Woolworths name"
+                        placeholderTextColor={palette.muted}
+                        autoCapitalize="words"
+                        style={styles.overlayInput}
+                      />
+                    </View>
+                  )}
+                </>
               ) : (
-                <Text style={styles.submitButtonText}>
-                  {overlayMode === "add" ? "Submit" : "Save"}
-                </Text>
+                <>
+                  {draft.coverage === "both" ? (
+                    <View>
+                      <TextInput
+                        value={draft.coles}
+                        onChangeText={(value) => onDraftChange("coles", value)}
+                        placeholder="Paste link (Coles or Woolworths)"
+                        placeholderTextColor={palette.muted}
+                        autoCapitalize="none"
+                        style={styles.overlayInput}
+                      />
+                      {detectStoreFromLink(draft.coles) ? (
+                        <Text style={styles.storeDetectionHint}>
+                          Detected: {detectStoreFromLink(draft.coles)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : (
+                    <View style={styles.dualFieldsContainer}>
+                      <View>
+                        <TextInput
+                          value={draft.coles}
+                          onChangeText={(value) => onDraftChange("coles", value)}
+                          placeholder="Coles link"
+                          placeholderTextColor={palette.muted}
+                          autoCapitalize="none"
+                          style={styles.overlayInput}
+                        />
+                        {detectStoreFromLink(draft.coles) === "Coles" ? (
+                          <Text style={styles.storeDetectionHint}>✓ Coles link detected</Text>
+                        ) : null}
+                      </View>
+                      <View>
+                        <TextInput
+                          value={draft.woolworths}
+                          onChangeText={(value) => onDraftChange("woolworths", value)}
+                          placeholder="Woolworths link"
+                          placeholderTextColor={palette.muted}
+                          autoCapitalize="none"
+                          style={styles.overlayInput}
+                        />
+                        {detectStoreFromLink(draft.woolworths) === "Woolworths" ? (
+                          <Text style={styles.storeDetectionHint}>✓ Woolworths link detected</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  )}
+                </>
               )}
-            </Pressable>
+            </View>
+
+            <View style={styles.overlayActions}>
+              <Pressable style={[styles.overlayButton, styles.overlayCancelButton]} onPress={closeOverlay}>
+                <Text style={styles.overlayCancelButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[styles.overlayButton, styles.overlaySubmitButton]} onPress={submitOverlay} disabled={loading}>
+                <Text style={styles.overlaySubmitButtonText}>
+                  {loading ? "..." : overlayMode === "add" ? "Add" : "Save"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       ) : null}
@@ -262,24 +340,33 @@ function EditableItemCard({
   const { palette } = useTheme();
   const styles = useMemo(() => createStyles(palette), [palette]);
   const label = entry.Coles?.Name || entry.Woolworths?.Name || "Item Name";
-  const infoLabel =
-    entry.Coles && entry.Woolworths
-      ? "Exact Coles · Best Match Woolworths"
-      : entry.Coles
-      ? "Coles only"
-      : "Woolworths only";
-  const imageLink = entry.Coles?.ImageLink || entry.Woolworths?.ImageLink;
+  const colesLink = entry.Coles?.Link;
+  const woolworthsLink = entry.Woolworths?.Link;
 
   return (
     <View style={styles.card}>
       <View style={styles.cardLeft}>
-        <ProductThumbnail source={imageLink} fallbackLabel={label.slice(0, 1)} size={60} />
+        <ProductThumbnail source={entry.Coles?.ImageLink || entry.Woolworths?.ImageLink} fallbackLabel={label.slice(0, 1)} size={60} />
       </View>
 
       <View style={styles.cardMiddle}>
         <Text style={styles.cardTitle}>{label}</Text>
         <Text style={styles.cardMeta}>Added just now</Text>
-        <Text style={styles.cardLinks}>{infoLabel}</Text>
+        <View style={styles.cardLinksContainer}>
+          {colesLink ? (
+            <Pressable onPress={() => onViewLink(colesLink)}>
+              <Text style={styles.cardLink}>View at Coles</Text>
+            </Pressable>
+          ) : null}
+          {colesLink && woolworthsLink ? (
+            <Text style={styles.cardLinkSeparator}> · </Text>
+          ) : null}
+          {woolworthsLink ? (
+            <Pressable onPress={() => onViewLink(woolworthsLink)}>
+              <Text style={styles.cardLink}>View at Woolworths</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.cardRight}>
@@ -292,6 +379,12 @@ function EditableItemCard({
       </View>
     </View>
   );
+
+  function onViewLink(link: string) {
+    if (typeof window !== "undefined") {
+      window.open(link, "_blank");
+    }
+  }
 }
 
 function ActionButton({
@@ -317,98 +410,104 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     page: {
       minHeight: 720,
       backgroundColor: palette.background,
-      paddingHorizontal: 24,
-      paddingTop: 24,
-      paddingBottom: 28,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 20,
     },
     topBar: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "flex-start",
+      alignItems: "center",
       marginBottom: 20,
+      gap: 12,
     },
-    title: {
+    topBarLeft: {
+      flex: 1,
+    },
+    brand: {
       color: palette.text,
-      fontSize: 48,
+      fontSize: 24,
       fontWeight: "300",
-      letterSpacing: -1.5,
+      letterSpacing: -0.8,
+      marginBottom: 4,
+    },
+    backButton: {
+      paddingHorizontal: 0,
+      paddingVertical: 4,
+    },
+    backButtonText: {
+      color: palette.accent,
+      fontSize: 12,
+      fontWeight: "500",
+    },
+    topBarRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    compareTopButton: {
+      borderWidth: 1.5,
+      borderColor: palette.accent,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    compareTopButtonText: {
+      color: palette.black,
+      fontSize: 13,
+      fontWeight: "600",
     },
     body: {
       flex: 1,
-      marginTop: 10,
+      marginTop: 0,
       position: "relative",
-      paddingBottom: 140,
+      paddingBottom: 90,
     },
     headerRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 24,
+      gap: 16,
+      marginBottom: 16,
     },
     headerText: {
       flex: 1,
-      gap: 12,
+      gap: 8,
     },
     pageKicker: {
       color: palette.text,
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: "400",
       textTransform: "uppercase",
-      letterSpacing: 0.5,
+      letterSpacing: 0.4,
     },
     pageSub: {
       color: palette.muted,
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: 13,
+      lineHeight: 18,
       maxWidth: 580,
       fontWeight: "400",
     },
-    headerActions: {
-      gap: 12,
-      alignItems: "flex-end",
-    },
-    actionButton: {
-      borderWidth: 1,
-      borderColor: palette.line,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      minWidth: 100,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: palette.surface,
-    },
-    actionButtonFilled: {
-      backgroundColor: palette.accent,
-      borderColor: palette.accent,
-    },
-    actionButtonText: {
-      color: palette.text,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    actionButtonTextFilled: {
-      color: palette.black,
-      fontWeight: "600",
-    },
     listColumn: {
-      marginTop: 32,
-      gap: 16,
+      marginTop: 0,
+      gap: 10,
     },
     card: {
-      minHeight: 180,
+      minHeight: 120,
       borderWidth: 1.5,
       borderColor: palette.line,
-      borderRadius: 16,
+      borderRadius: 12,
       flexDirection: "row",
-      paddingHorizontal: 20,
-      paddingVertical: 18,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
       alignItems: "center",
       backgroundColor: palette.surface,
-      gap: 20,
+      gap: 12,
     },
     cardLeft: {
-      width: 70,
+      width: 60,
       alignItems: "flex-start",
       justifyContent: "center",
     },
@@ -416,94 +515,105 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       flex: 1,
       alignSelf: "stretch",
       justifyContent: "space-between",
-      paddingVertical: 8,
+      paddingVertical: 2,
     },
     cardTitle: {
       color: palette.text,
-      fontSize: 18,
+      fontSize: 15,
       fontWeight: "500",
-      letterSpacing: -0.5,
+      letterSpacing: -0.2,
     },
     cardMeta: {
       color: palette.muted,
-      fontSize: 12,
-      marginTop: 4,
+      fontSize: 11,
+      marginTop: 1,
       fontWeight: "400",
     },
-    cardLinks: {
+    cardLinksContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 4,
+      flexWrap: "wrap",
+    },
+    cardLink: {
       color: palette.accent,
-      fontSize: 12,
+      fontSize: 11,
       textDecorationLine: "underline",
-      marginTop: 8,
+      fontWeight: "500",
+    },
+    cardLinkSeparator: {
+      color: palette.muted,
+      fontSize: 11,
       fontWeight: "400",
+      marginHorizontal: 2,
     },
     cardRight: {
-      width: 120,
+      width: 90,
       alignSelf: "stretch",
       justifyContent: "center",
       alignItems: "flex-end",
-      gap: 10,
-      paddingVertical: 8,
+      gap: 6,
+      paddingVertical: 2,
     },
     removeButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
       backgroundColor: palette.danger,
       alignItems: "center",
       justifyContent: "center",
     },
     removeButtonText: {
       color: palette.white,
-      fontSize: 28,
+      fontSize: 20,
       fontWeight: "300",
-      lineHeight: 28,
-      marginTop: -2,
+      lineHeight: 20,
+      marginTop: 0,
     },
     editButton: {
       borderWidth: 1,
       borderColor: palette.line,
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      borderRadius: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
       backgroundColor: palette.background,
     },
     editButtonText: {
       color: palette.text,
-      fontSize: 13,
+      fontSize: 11,
       fontWeight: "500",
     },
     addButton: {
       position: "absolute",
-      right: 0,
-      bottom: 0,
+      right: 20,
+      bottom: 20,
       backgroundColor: palette.surface,
-      borderRadius: 16,
+      borderRadius: 10,
       flexDirection: "row",
       alignItems: "center",
-      paddingLeft: 22,
-      paddingRight: 12,
-      paddingVertical: 14,
-      gap: 16,
+      paddingLeft: 14,
+      paddingRight: 8,
+      paddingVertical: 8,
+      gap: 10,
       borderWidth: 1.5,
       borderColor: palette.line,
     },
     addButtonLabel: {
       color: palette.text,
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: "500",
     },
     addBubble: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: palette.black,
       alignItems: "center",
       justifyContent: "center",
     },
     addBubbleText: {
       color: palette.white,
-      fontSize: 24,
+      fontSize: 18,
       fontWeight: "300",
     },
     overlayScrim: {
@@ -515,76 +625,118 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       backgroundColor: "rgba(0,0,0,0.85)",
       alignItems: "center",
       justifyContent: "center",
-      padding: 24,
+      padding: 20,
+    },
+    overlayModeRow: {
+      flexDirection: "row",
+      gap: 10,
+      flexWrap: "wrap",
+      justifyContent: "center",
+    },
+    overlayCoverageRow: {
+      flexDirection: "row",
+      gap: 10,
+      flexWrap: "wrap",
+      justifyContent: "center",
+      marginTop: 6,
     },
     overlayCard: {
       width: "100%",
-      maxWidth: 480,
+      maxWidth: 420,
       borderWidth: 1.5,
       borderColor: palette.line,
-      borderRadius: 28,
+      borderRadius: 20,
       backgroundColor: palette.background,
-      paddingHorizontal: 32,
-      paddingTop: 32,
-      paddingBottom: 36,
-      gap: 20,
+      paddingHorizontal: 24,
+      paddingTop: 20,
+      paddingBottom: 20,
+      gap: 18,
+    },
+    overlayHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 2,
     },
     overlayTitle: {
       color: palette.text,
-      fontSize: 32,
+      fontSize: 24,
       fontWeight: "400",
-      textAlign: "center",
-      letterSpacing: -0.8,
+      letterSpacing: -0.6,
     },
-    modeRow: {
-      flexDirection: "row",
-      gap: 12,
-      flexWrap: "wrap",
+    overlayCloseButton: {
+      width: 28,
+      height: 28,
+      alignItems: "center",
       justifyContent: "center",
+      borderRadius: 14,
+      backgroundColor: palette.surface,
     },
-    coverageRow: {
-      flexDirection: "row",
-      gap: 12,
-      flexWrap: "wrap",
-      justifyContent: "center",
-      marginTop: 8,
-    },
-    fieldLabel: {
+    overlayCloseButtonText: {
       color: palette.muted,
-      fontSize: 14,
-      fontWeight: "500",
-      marginTop: 12,
+      fontSize: 16,
+      fontWeight: "300",
+    },
+    overlayFieldSection: {
+      gap: 10,
+    },
+    overlayFieldLabel: {
+      color: palette.muted,
+      fontSize: 12,
+      fontWeight: "600",
       textTransform: "uppercase",
       letterSpacing: 0.5,
     },
-    dualFields: {
-      gap: 14,
-      marginTop: 8,
+    dualFieldsContainer: {
+      gap: 10,
+    },
+    storeDetectionHint: {
+      color: palette.success,
+      fontSize: 11,
+      fontWeight: "500",
+      marginTop: 4,
     },
     overlayInput: {
       borderWidth: 1.5,
       borderColor: palette.line,
-      borderRadius: 14,
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
       color: palette.text,
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: "400",
       backgroundColor: palette.surface,
     },
-    submitButton: {
-      backgroundColor: palette.white,
-      borderRadius: 16,
-      paddingVertical: 16,
+    overlayActions: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 4,
+    },
+    overlayButton: {
+      flex: 1,
+      borderRadius: 10,
+      paddingVertical: 10,
       alignItems: "center",
       justifyContent: "center",
-      marginTop: 20,
-      minHeight: 56,
+      minHeight: 44,
     },
-    submitButtonText: {
-      color: palette.black,
-      fontSize: 18,
+    overlayCancelButton: {
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      backgroundColor: palette.surface,
+    },
+    overlayCancelButtonText: {
+      color: palette.text,
+      fontSize: 14,
       fontWeight: "500",
+    },
+    overlaySubmitButton: {
+      backgroundColor: palette.accent,
+    },
+    overlaySubmitButtonText: {
+      color: palette.black,
+      fontSize: 14,
+      fontWeight: "600",
     },
   });
 }

@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useEffect, useState } from "react";
+import { StyleSheet, Text, View, Animated } from "react-native";
 import { FeatureArtwork, ThemeToggle } from "../components/common";
 import { useTheme } from "../lib/theme";
 
@@ -10,11 +10,34 @@ export default function LoadingResultsScreen({
 }) {
   const { palette } = useTheme();
   const styles = useMemo(() => createStyles(palette), [palette]);
+  const [spinAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [spinAnim]);
+
+  const spinInterpolate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  const spinStyle = {
+    transform: [{ rotate: spinInterpolate }],
+  };
 
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <Text style={styles.brand}>Comparing Stores</Text>
+        <View>
+          <Text style={styles.brand}>Open.</Text>
+          <Text style={styles.subtitle}>Comparing Stores</Text>
+        </View>
         <ThemeToggle />
       </View>
 
@@ -23,11 +46,11 @@ export default function LoadingResultsScreen({
         <Text style={styles.heroSub}>{listName}</Text>
       </View>
 
-      <View style={styles.progressRing}>
+      <Animated.View style={[styles.progressRing, spinStyle]}>
         <View style={styles.progressInner}>
-          <Text style={styles.progressText}>40%</Text>
+          <Text style={styles.progressText}>⟳</Text>
         </View>
-      </View>
+      </Animated.View>
 
       <View style={styles.planetFrame}>
         <FeatureArtwork fallback="comparison" />
@@ -41,21 +64,30 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     page: {
       minHeight: 720,
       backgroundColor: palette.background,
-      paddingHorizontal: 24,
-      paddingTop: 24,
-      paddingBottom: 40,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 28,
     },
     topBar: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 30,
+      alignItems: "flex-start",
+      marginBottom: 24,
+      gap: 12,
     },
     brand: {
       color: palette.text,
-      fontSize: 48,
+      fontSize: 24,
       fontWeight: "300",
-      letterSpacing: -1.5,
+      letterSpacing: -0.8,
+    },
+    subtitle: {
+      color: palette.muted,
+      fontSize: 12,
+      fontWeight: "500",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+      marginTop: 1,
     },
     hero: {
       alignItems: "center",
@@ -76,29 +108,26 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       fontWeight: "400",
     },
     progressRing: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-      borderWidth: 8,
-      borderColor: palette.line,
-      borderTopColor: palette.accent,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
       alignSelf: "center",
-      marginTop: 30,
-      marginBottom: 30,
+      marginTop: 40,
+      marginBottom: 40,
       alignItems: "center",
       justifyContent: "center",
     },
     progressInner: {
-      width: 90,
-      height: 90,
-      borderRadius: 45,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
       alignItems: "center",
       justifyContent: "center",
     },
     progressText: {
-      color: palette.text,
-      fontSize: 32,
-      fontWeight: "400",
+      color: palette.accent,
+      fontSize: 48,
+      fontWeight: "300",
     },
     planetFrame: {
       marginTop: 20,

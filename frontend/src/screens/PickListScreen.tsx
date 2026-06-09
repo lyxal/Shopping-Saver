@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ListSummary } from "../lib/types";
 import { EmptyState, SecondaryButton, ThemeToggle } from "../components/common";
@@ -23,63 +23,97 @@ export default function PickListScreen({
 }) {
   const { palette } = useTheme();
   const styles = useMemo(() => createStyles(palette), [palette]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const handleCreateClick = () => {
+    if (newListName.trim()) {
+      onCreateList();
+      setShowCreateModal(false);
+    }
+  };
 
   return (
     <View style={styles.page}>
       <View style={styles.topBar}>
-        <Text style={styles.title}>Choose a list to compare or edit</Text>
-        <ThemeToggle />
+        <View>
+          <Text style={styles.brand}>Open.</Text>
+          <Text style={styles.title}>Your Lists</Text>
+        </View>
+        <View style={styles.topBarActions}>
+          <Pressable onPress={() => setShowCreateModal(true)} style={styles.createListButton}>
+            <Text style={styles.createListButtonText}>+ New List</Text>
+          </Pressable>
+          <SecondaryButton label="Log Out" onPress={onBackToLogin} />
+          <ThemeToggle />
+        </View>
       </View>
 
       <View style={styles.body}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            <Text style={styles.pageKicker}>Pick List</Text>
-            <Text style={styles.pageSub}>
-              Choose an existing list or create a new one before editing items and comparing stores.
-            </Text>
-          </View>
-          <SecondaryButton label="Change Account" onPress={onBackToLogin} />
-        </View>
-
         <View style={styles.listColumn}>
           {lists.length === 0 ? (
             <EmptyState title="No lists yet" body="Create your first shopping list to begin." />
           ) : (
             lists.map((list) => (
               <Pressable key={list.ListID} onPress={() => onPickList(list)} style={styles.listCard}>
-                <View style={styles.listCardTop}>
-                  <Text style={styles.listTitle}>{list.ListName}</Text>
-                  <View style={styles.arrowCircle}>
-                    <Text style={styles.arrowText}>→</Text>
+                <View style={styles.listCardContent}>
+                  <View style={styles.listCardLeft}>
+                    <Text style={styles.listTitle}>{list.ListName}</Text>
+                    <Text style={styles.listMeta}>xx items • Created xx/yy/zz • Last Edited xx/yy/zz</Text>
                   </View>
-                </View>
-                <Text style={styles.listMeta}>xx items • Created xx/yy/zz • Last Edited xx/yy/zz</Text>
-                <View style={styles.editRow}>
-                  <Text style={styles.editHint}>Edit</Text>
-                  <Text style={styles.editIcon}>✎</Text>
+                  <View style={styles.listCardRight}>
+                    <Pressable style={styles.editButton}>
+                      <Text style={styles.editButtonText}>Edit</Text>
+                    </Pressable>
+                    <Pressable style={styles.compareButton}>
+                      <Text style={styles.compareButtonText}>Compare</Text>
+                    </Pressable>
+                  </View>
                 </View>
               </Pressable>
             ))
           )}
         </View>
+      </View>
 
-        <View style={styles.createRow}>
-          <View style={styles.createPanel}>
+      {showCreateModal ? (
+        <View style={styles.modalScrim}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCreateModal(false)} />
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create New List</Text>
+              <Pressable onPress={() => setShowCreateModal(false)} style={styles.modalCloseButton}>
+                <Text style={styles.modalCloseButtonText}>✕</Text>
+              </Pressable>
+            </View>
+
             <TextInput
               value={newListName}
               onChangeText={onNewListNameChange}
-              placeholder="Create List"
+              placeholder="List name"
               placeholderTextColor={palette.muted}
-              style={styles.createInput}
+              style={styles.modalInput}
             />
-            <Pressable onPress={onCreateList} style={styles.createButton}>
-              <Text style={styles.createButtonText}>+</Text>
-            </Pressable>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setShowCreateModal(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.modalSubmitButton]}
+                onPress={handleCreateClick}
+                disabled={loading || !newListName.trim()}
+              >
+                <Text style={styles.modalSubmitButtonText}>
+                  {loading ? "Creating..." : "Create"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
-          {loading ? <Text style={styles.loadingText}>Creating...</Text> : null}
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }
@@ -89,157 +123,203 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     page: {
       minHeight: 720,
       backgroundColor: palette.background,
-      paddingHorizontal: 24,
-      paddingTop: 24,
-      paddingBottom: 28,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 20,
     },
     topBar: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 24,
+      gap: 14,
       marginBottom: 20,
     },
-    title: {
-      flex: 1,
+    brand: {
       color: palette.text,
-      fontSize: 40,
-      lineHeight: 44,
-      fontWeight: "400",
-      letterSpacing: -1.2,
+      fontSize: 28,
+      fontWeight: "300",
+      letterSpacing: -0.9,
+      marginBottom: 2,
+    },
+    title: {
+      color: palette.text,
+      fontSize: 24,
+      lineHeight: 28,
+      fontWeight: "600",
+      letterSpacing: -0.6,
+    },
+    topBarActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    createListButton: {
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      backgroundColor: palette.accent,
+    },
+    createListButtonText: {
+      color: palette.black,
+      fontSize: 13,
+      fontWeight: "600",
     },
     body: {
       flex: 1,
-      marginTop: 10,
-      gap: 28,
-      paddingBottom: 120,
-    },
-    headerRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: 24,
-    },
-    headerText: {
-      flex: 1,
-      gap: 12,
-    },
-    pageKicker: {
-      color: palette.text,
-      fontSize: 16,
-      fontWeight: "500",
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
-    },
-    pageSub: {
-      color: palette.muted,
-      fontSize: 14,
-      lineHeight: 21,
-      maxWidth: 700,
-      fontWeight: "400",
+      marginTop: 0,
     },
     listColumn: {
-      gap: 14,
-      marginTop: 12,
+      gap: 10,
     },
     listCard: {
       borderWidth: 1.5,
       borderColor: palette.line,
-      borderRadius: 16,
-      paddingHorizontal: 20,
-      paddingVertical: 18,
-      gap: 14,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
       backgroundColor: palette.surface,
     },
-    listCardTop: {
+    listCardContent: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+    },
+    listCardLeft: {
+      flex: 1,
+    },
+    listTitle: {
+      color: palette.text,
+      fontSize: 16,
+      fontWeight: "500",
+      letterSpacing: -0.3,
+      marginBottom: 4,
+    },
+    listMeta: {
+      color: palette.muted,
+      fontSize: 11,
+      fontWeight: "400",
+    },
+    listCardRight: {
+      flexDirection: "row",
+      gap: 6,
+      alignItems: "center",
+    },
+    editButton: {
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      backgroundColor: palette.background,
+    },
+    editButtonText: {
+      color: palette.text,
+      fontSize: 12,
+      fontWeight: "500",
+    },
+    compareButton: {
+      borderWidth: 1.5,
+      borderColor: palette.accent,
+      borderRadius: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      backgroundColor: palette.accentSoft,
+    },
+    compareButtonText: {
+      color: palette.accentDeep,
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    modalScrim: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.85)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    modalCard: {
+      width: "100%",
+      maxWidth: 420,
+      borderWidth: 1.5,
+      borderColor: palette.line,
+      borderRadius: 24,
+      backgroundColor: palette.background,
+      paddingHorizontal: 28,
+      paddingTop: 28,
+      paddingBottom: 24,
+      gap: 20,
+    },
+    modalHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
     },
-    listTitle: {
+    modalTitle: {
       color: palette.text,
-      fontSize: 18,
-      fontWeight: "500",
-      letterSpacing: -0.5,
+      fontSize: 28,
+      fontWeight: "400",
+      letterSpacing: -0.7,
     },
-    arrowCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+    modalCloseButton: {
+      width: 32,
+      height: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 16,
+      backgroundColor: palette.surface,
+    },
+    modalCloseButtonText: {
+      color: palette.muted,
+      fontSize: 18,
+      fontWeight: "400",
+    },
+    modalInput: {
       borderWidth: 1.5,
       borderColor: palette.line,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      color: palette.text,
+      fontSize: 16,
+      fontWeight: "400",
+      backgroundColor: palette.surface,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 4,
+    },
+    modalButton: {
+      flex: 1,
+      borderRadius: 12,
+      paddingVertical: 12,
       alignItems: "center",
       justifyContent: "center",
     },
-    arrowText: {
-      color: palette.text,
-      fontSize: 20,
-      fontWeight: "300",
-    },
-    listMeta: {
-      color: palette.muted,
-      fontSize: 12,
-      fontWeight: "400",
-    },
-    editRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    editHint: {
-      color: palette.accent,
-      fontSize: 12,
-      fontWeight: "500",
-      textDecorationLine: "underline",
-    },
-    editIcon: {
-      color: palette.muted,
-      fontSize: 14,
-    },
-    createRow: {
-      position: "absolute",
-      right: 0,
-      bottom: 0,
-      alignItems: "flex-end",
-      gap: 10,
-    },
-    createPanel: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: palette.surface,
-      borderRadius: 16,
-      paddingLeft: 20,
-      paddingRight: 12,
-      paddingVertical: 12,
-      gap: 16,
+    modalCancelButton: {
       borderWidth: 1.5,
       borderColor: palette.line,
+      backgroundColor: palette.surface,
     },
-    createInput: {
-      minWidth: 180,
+    modalCancelButtonText: {
       color: palette.text,
       fontSize: 15,
       fontWeight: "500",
-      paddingVertical: 4,
-      paddingHorizontal: 0,
     },
-    createButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: palette.black,
-      alignItems: "center",
-      justifyContent: "center",
+    modalSubmitButton: {
+      backgroundColor: palette.accent,
     },
-    createButtonText: {
-      color: palette.white,
-      fontSize: 24,
-      fontWeight: "300",
-    },
-    loadingText: {
-      color: palette.muted,
-      fontSize: 12,
-      fontWeight: "400",
+    modalSubmitButtonText: {
+      color: palette.black,
+      fontSize: 15,
+      fontWeight: "600",
     },
   });
 }
