@@ -1,6 +1,8 @@
 export type Store = "Coles" | "Woolworths";
 
-export type Screen = "login" | "pickList" | "modifyList" | "results";
+export type ThemeMode = "dark" | "light";
+
+export type Screen = "landing" | "pickList" | "modifyList" | "loadingResults" | "results";
 
 export type EntryMode = "name" | "link";
 
@@ -68,6 +70,7 @@ export type EntryDraft = {
 
 export type AppState = {
   screen: Screen;
+  themeMode: ThemeMode;
   email: string;
   userId: string;
   lists: ListSummary[];
@@ -82,4 +85,14 @@ export type AppState = {
   newListName: string;
   entryMode: EntryMode;
   drafts: Record<EntryMode, EntryDraft>;
+};
+
+export type PersistedAppState = Pick<
+  AppState,
+  "screen" | "themeMode" | "email" | "userId" | "lists" | "activeList" | "products" | "compareResult" | "newListName" | "entryMode" | "drafts"
+>;
+
+export type AppRoute = {
+  screen: Screen;
+  listId?: string;
 };

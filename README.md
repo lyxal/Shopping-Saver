@@ -55,11 +55,12 @@ Functional Requirements
 
 ## Mobile Frontend
 
-The React Native frontend lives in [`frontend/`](frontend/). It is an Expo-based app that connects to the `ComparisonAPI` backend and covers the core workflow:
+The React Native frontend lives in [`frontend/`](frontend/). It is an Expo-based app that connects to the `ComparisonAPI` backend and now uses browser routes for the main pages, so refreshing keeps you on the same step:
 
 - sign in with email
 - create or choose a grocery list
 - add products by name or link, with Coles/Woolworths/both-store entry
-- compare Coles vs Woolworths totals
+- remove products with `POST /removeProduct`
+- compare Coles vs Woolworths totals through a loading page and results page
 
 Set `EXPO_PUBLIC_API_BASE_URL` to your backend URL before running the app locally.

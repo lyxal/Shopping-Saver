@@ -2,3 +2,4 @@
 - Refined database schema.
 - Refined POST request body formats.
 - Stubbed `getProductFromWoolworthsURL`, `getProductFromColesURL`, `getProductFromWoolworthsName`, and `getProductFromColesName` functions.
+- Frontend

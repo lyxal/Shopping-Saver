@@ -1,8 +1,8 @@
-import React from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { palette } from "../lib/theme";
+import React, { useMemo } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ListSummary } from "../lib/types";
-import { EmptyState, ListCard, SecondaryButton } from "../components/common";
+import { EmptyState, SecondaryButton, ThemeToggle } from "../components/common";
+import { useTheme } from "../lib/theme";
 
 export default function PickListScreen({
   lists,
@@ -21,176 +21,221 @@ export default function PickListScreen({
   onPickList: (list: ListSummary) => void;
   onBackToLogin: () => void;
 }) {
+  const { palette } = useTheme();
+  const styles = useMemo(() => createStyles(palette), [palette]);
+
   return (
-    <View style={styles.pageCard}>
-      <View style={styles.cardHeaderRow}>
-        <View style={styles.cardHeaderText}>
-          <Text style={styles.pageKicker}>Step 2</Text>
-          <Text style={styles.pageTitle}>Pick a list</Text>
-          <Text style={styles.pageBody}>
-            Choose the basket you want to update, or start a new weekly list.
-          </Text>
+    <View style={styles.page}>
+      <View style={styles.topBar}>
+        <Text style={styles.title}>Choose a list to compare or edit</Text>
+        <ThemeToggle />
+      </View>
+
+      <View style={styles.body}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <Text style={styles.pageKicker}>Pick List</Text>
+            <Text style={styles.pageSub}>
+              Choose an existing list or create a new one before editing items and comparing stores.
+            </Text>
+          </View>
+          <SecondaryButton label="Change Account" onPress={onBackToLogin} />
         </View>
-        <SecondaryButton label="Change account" onPress={onBackToLogin} />
-      </View>
 
-      <View style={styles.inlineCard}>
-        <Text style={styles.fieldLabel}>Create new list</Text>
-        <View style={styles.inlineRow}>
-          <TextInput
-            value={newListName}
-            onChangeText={onNewListNameChange}
-            placeholder="e.g. Weekly shop"
-            placeholderTextColor={palette.muted}
-            style={[styles.input, styles.flexGrow]}
-          />
-          <Pressable
-            onPress={onCreateList}
-            style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
-          >
-            {loading ? (
-              <ActivityIndicator color={palette.text} />
-            ) : (
-              <Text style={styles.secondaryButtonText}>Create</Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.listSectionHeader}>
-        <Text style={styles.sectionTitle}>Your saved lists</Text>
-        <Text style={styles.sectionHint}>Tap a list to open the edit screen.</Text>
-      </View>
-
-      {lists.length === 0 ? (
-        <EmptyState
-          title="No lists yet"
-          body="Create your first shopping list and add a few usual products."
-        />
-      ) : (
         <View style={styles.listColumn}>
-          {lists.map((list) => (
-            <Pressable key={list.ListID} onPress={() => onPickList(list)}>
-              <ListCard list={list} />
-            </Pressable>
-          ))}
+          {lists.length === 0 ? (
+            <EmptyState title="No lists yet" body="Create your first shopping list to begin." />
+          ) : (
+            lists.map((list) => (
+              <Pressable key={list.ListID} onPress={() => onPickList(list)} style={styles.listCard}>
+                <View style={styles.listCardTop}>
+                  <Text style={styles.listTitle}>{list.ListName}</Text>
+                  <View style={styles.arrowCircle}>
+                    <Text style={styles.arrowText}>→</Text>
+                  </View>
+                </View>
+                <Text style={styles.listMeta}>xx items • Created xx/yy/zz • Last Edited xx/yy/zz</Text>
+                <View style={styles.editRow}>
+                  <Text style={styles.editHint}>Edit</Text>
+                  <Text style={styles.editIcon}>✎</Text>
+                </View>
+              </Pressable>
+            ))
+          )}
         </View>
-      )}
+
+        <View style={styles.createRow}>
+          <View style={styles.createPanel}>
+            <TextInput
+              value={newListName}
+              onChangeText={onNewListNameChange}
+              placeholder="Create List"
+              placeholderTextColor={palette.muted}
+              style={styles.createInput}
+            />
+            <Pressable onPress={onCreateList} style={styles.createButton}>
+              <Text style={styles.createButtonText}>+</Text>
+            </Pressable>
+          </View>
+          {loading ? <Text style={styles.loadingText}>Creating...</Text> : null}
+        </View>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  pageCard: {
-    backgroundColor: palette.surface,
-    borderRadius: 28,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 2,
-  },
-  pageKicker: {
-    color: palette.accentDeep,
-    textTransform: "uppercase",
-    letterSpacing: 1.4,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  pageTitle: {
-    color: palette.text,
-    fontSize: 26,
-    lineHeight: 30,
-    fontWeight: "900",
-    letterSpacing: -0.8,
-  },
-  pageBody: {
-    color: palette.muted,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  cardHeaderText: {
-    flex: 1,
-    gap: 6,
-  },
-  inlineCard: {
-    backgroundColor: palette.surfaceMuted,
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 12,
-  },
-  fieldLabel: {
-    color: palette.text,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  inlineRow: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "center",
-  },
-  input: {
-    backgroundColor: palette.surfaceMuted,
-    color: palette.text,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-  },
-  flexGrow: {
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  secondaryButton: {
-    backgroundColor: palette.surfaceMuted,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    minHeight: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryButtonText: {
-    color: palette.text,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  pressed: {
-    opacity: 0.84,
-    transform: [{ scale: 0.99 }],
-  },
-  listSectionHeader: {
-    gap: 4,
-  },
-  sectionTitle: {
-    color: palette.text,
-    fontSize: 19,
-    lineHeight: 24,
-    fontWeight: "900",
-    letterSpacing: -0.3,
-  },
-  sectionHint: {
-    color: palette.muted,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  listColumn: {
-    gap: 10,
-  },
-});
+function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
+  return StyleSheet.create({
+    page: {
+      minHeight: 720,
+      backgroundColor: palette.background,
+      paddingHorizontal: 18,
+      paddingTop: 20,
+      paddingBottom: 28,
+    },
+    topBar: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 18,
+    },
+    title: {
+      flex: 1,
+      color: palette.text,
+      fontSize: 44,
+      lineHeight: 48,
+      fontWeight: "300",
+      letterSpacing: -1.8,
+    },
+    body: {
+      flex: 1,
+      marginTop: 10,
+      gap: 24,
+      paddingBottom: 120,
+    },
+    headerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 18,
+    },
+    headerText: {
+      flex: 1,
+      gap: 8,
+    },
+    pageKicker: {
+      color: palette.text,
+      fontSize: 18,
+      fontWeight: "300",
+    },
+    pageSub: {
+      color: palette.muted,
+      fontSize: 14,
+      lineHeight: 20,
+      maxWidth: 700,
+    },
+    listColumn: {
+      gap: 28,
+      marginTop: 6,
+    },
+    listCard: {
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 12,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      gap: 12,
+      backgroundColor: palette.surface,
+    },
+    listCardTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    listTitle: {
+      color: palette.text,
+      fontSize: 36,
+      fontWeight: "300",
+      letterSpacing: -1.4,
+    },
+    arrowCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: palette.line,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    arrowText: {
+      color: palette.text,
+      fontSize: 28,
+      fontWeight: "300",
+      marginTop: -2,
+    },
+    listMeta: {
+      color: palette.muted,
+      fontSize: 18,
+      fontWeight: "300",
+    },
+    editRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    editHint: {
+      color: palette.accentDeep,
+      fontSize: 14,
+      textDecorationLine: "underline",
+    },
+    editIcon: {
+      color: palette.text,
+      fontSize: 18,
+    },
+    createRow: {
+      position: "absolute",
+      right: 0,
+      bottom: 0,
+      alignItems: "flex-end",
+      gap: 8,
+    },
+    createPanel: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: palette.surface,
+      borderRadius: 10,
+      paddingLeft: 18,
+      paddingRight: 10,
+      paddingVertical: 10,
+      gap: 18,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    createInput: {
+      minWidth: 220,
+      color: palette.text,
+      fontSize: 30,
+      fontWeight: "300",
+      paddingVertical: 0,
+      paddingHorizontal: 0,
+    },
+    createButton: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: palette.background,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    createButtonText: {
+      color: palette.text,
+      fontSize: 32,
+      fontWeight: "300",
+      marginTop: -4,
+    },
+    loadingText: {
+      color: palette.muted,
+      fontSize: 12,
+    },
+  });
+}

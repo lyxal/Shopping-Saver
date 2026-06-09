@@ -166,6 +166,12 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
     return Results.Ok(new { Message = "Product added successfully." });
 });
 
+app.MapPost("/removeProduct", async (RemoveProductRequest request) =>
+{
+    listsDb.RemoveComparisonFromList(request.UserID, request.ListID, request.ProductID);
+    return Results.Ok(new { Message = "Product removed successfully." });
+});
+
 app.MapGet("/getLists/{userID}", async (string userID) =>
 {
     return Results.Ok(listsDb.GetListsForUser(userID));

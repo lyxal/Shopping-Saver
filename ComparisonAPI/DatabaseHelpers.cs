@@ -112,6 +112,16 @@ public class ListsDatabase
             { "ListName", doc["ListName"].AsString }
         })];
     }
+
+    public void RemoveComparisonFromList(string userID, string listID, string productID)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("UserID", userID) & Builders<BsonDocument>.Filter.Eq("ListID", listID);
+        var update = Builders<BsonDocument>.Update.PullFilter("Products", Builders<BsonDocument>.Filter.Or(
+            Builders<BsonDocument>.Filter.Eq("Coles", productID),
+            Builders<BsonDocument>.Filter.Eq("Woolworths", productID)
+        ));
+        _listsCollection.UpdateOne(filter, update);
+    }
 }
 
 public class FactProductsDatabase

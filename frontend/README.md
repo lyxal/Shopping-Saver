@@ -8,9 +8,9 @@ React Native frontend for the `ComparisonAPI` backend.
 - Loads and creates shopping lists
 - Adds products by name or link
 - Supports Coles + Woolworths, Coles-only, and Woolworths-only entry
-- Runs the Coles vs Woolworths comparison
-- Shows the cheaper store plus per-item differences
-- Uses four explicit pages: Login, Pick List, Modify List, Comparison Results
+- Removes products with the backend `POST /removeProduct` route
+- Runs the Coles vs Woolworths comparison through a dedicated loading page
+- Keeps the current page on refresh by using the browser URL as the route source
 
 ## Structure
 

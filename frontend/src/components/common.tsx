@@ -1,21 +1,40 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
+  Image,
   Pressable,
-  TextInput,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
-import { palette } from "../lib/theme";
+import { formatCurrency, formatPercent } from "../lib/api";
+import { useTheme } from "../lib/theme";
 import type {
   ComparisonRow,
-  ProductRecord,
-  Store,
   ListSummary,
+  ProductRecord,
+  Screen,
+  Store,
 } from "../lib/types";
-import { formatCurrency, formatPercent } from "../lib/api";
+
+export function ThemeToggle() {
+  const { mode, palette, toggleTheme } = useTheme();
+  const styles = useStyles();
+  const dark = mode === "dark";
+
+  return (
+    <Pressable onPress={toggleTheme} style={styles.themeToggle} accessibilityRole="switch" accessibilityState={{ checked: !dark }}>
+      <Text style={styles.themeIcon}>{dark ? "☼" : "☀"}</Text>
+      <View style={[styles.switchTrack, dark && styles.switchTrackDark, !dark && styles.switchTrackLight]}>
+        <View style={[styles.switchThumb, dark ? styles.switchThumbDark : styles.switchThumbLight]} />
+      </View>
+      <Text style={[styles.themeIcon, { color: palette.text }]}>{dark ? "☾" : "☽"}</Text>
+    </Pressable>
+  );
+}
 
 export function Notice({ tone, text }: { tone: "danger" | "success"; text: string }) {
+  const styles = useStyles();
   return (
     <View
       style={[
@@ -29,6 +48,7 @@ export function Notice({ tone, text }: { tone: "danger" | "success"; text: strin
 }
 
 export function InfoChip({ label, value }: { label: string; value: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.infoChip}>
       <Text style={styles.infoChipLabel}>{label}</Text>
@@ -48,6 +68,7 @@ export function SummaryMetric({
   value: string;
   accent?: boolean;
 }) {
+  const styles = useStyles();
   return (
     <View style={[styles.summaryMetric, accent && styles.summaryMetricAccent]}>
       <Text style={styles.summaryMetricLabel}>{label}</Text>
@@ -65,6 +86,7 @@ export function ToggleChip({
   active: boolean;
   onPress: () => void;
 }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -84,6 +106,7 @@ export function PrimaryButton({
   label: string;
   onPress: () => void;
 }) {
+  const styles = useStyles();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
       <Text style={styles.primaryButtonText}>{label}</Text>
@@ -98,6 +121,7 @@ export function SecondaryButton({
   label: string;
   onPress: () => void;
 }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -121,6 +145,7 @@ export function StoreField({
   helper?: string;
   onChange: (value: string) => void;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.storeField}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -135,6 +160,7 @@ export function StoreField({
 }
 
 export function StepTrack({ screen }: { screen: "login" | "pickList" | "modifyList" | "results" }) {
+  const styles = useStyles();
   const steps: Array<{ key: typeof screen; label: string }> = [
     { key: "login", label: "Login" },
     { key: "pickList", label: "Pick List" },
@@ -174,6 +200,7 @@ export function StepTrack({ screen }: { screen: "login" | "pickList" | "modifyLi
 }
 
 export function EmptyState({ title, body }: { title: string; body: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.emptyCard}>
       <Text style={styles.emptyTitle}>{title}</Text>
@@ -183,6 +210,7 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 }
 
 export function ListCard({ list }: { list: ListSummary }) {
+  const styles = useStyles();
   return (
     <View style={styles.listCard}>
       <View style={styles.listCardTop}>
@@ -205,6 +233,7 @@ export function ProductCard({
     Woolworths: ProductRecord | null;
   };
 }) {
+  const styles = useStyles();
   const items = [
     entry.Coles ? { label: "Coles", product: entry.Coles } : null,
     entry.Woolworths ? { label: "Woolworths", product: entry.Woolworths } : null,
@@ -216,10 +245,13 @@ export function ProductCard({
       <View style={styles.productPillRow}>
         {items.map(({ label, product }) => (
           <View key={label} style={styles.productPill}>
-            <Text style={styles.productPillLabel}>{label}</Text>
-            <Text style={styles.productPillName} numberOfLines={1}>
-              {product.Name}
-            </Text>
+            <ProductThumbnail source={product.ImageLink} fallbackLabel={label.slice(0, 1)} />
+            <View style={styles.productPillCopy}>
+              <Text style={styles.productPillLabel}>{label}</Text>
+              <Text style={styles.productPillName} numberOfLines={1}>
+                {product.Name}
+              </Text>
+            </View>
           </View>
         ))}
       </View>
@@ -227,7 +259,104 @@ export function ProductCard({
   );
 }
 
+export function ProductThumbnail({
+  source,
+  fallbackLabel,
+  size = 54,
+}: {
+  source?: string | null;
+  fallbackLabel?: string;
+  size?: number;
+}) {
+  const { palette } = useTheme();
+  const styles = useStyles();
+  const [hasError, setHasError] = useState(false);
+  const shouldShowImage = Boolean(source && !hasError);
+
+  if (shouldShowImage) {
+    return (
+      <Image
+        source={{ uri: source ?? undefined }}
+        resizeMode="cover"
+        onError={() => setHasError(true)}
+        style={[
+          styles.productThumb,
+          { width: size, height: size, borderRadius: Math.max(12, size / 4) },
+        ]}
+      />
+    );
+  }
+
+  return (
+    <View
+      style={[
+        styles.productThumbFallback,
+        {
+          width: size,
+          height: size,
+          borderRadius: Math.max(12, size / 4),
+          backgroundColor: palette.surfaceWarm,
+        },
+      ]}
+    >
+      <Text style={styles.productThumbFallbackText}>{fallbackLabel ?? "•"}</Text>
+    </View>
+  );
+}
+
+export function FeatureArtwork({
+  source,
+  fallback,
+}: {
+  source?: string | null;
+  fallback: "planet" | "earth" | "comparison";
+}) {
+  const { palette } = useTheme();
+  const styles = useStyles();
+  const [hasError, setHasError] = useState(false);
+  const shouldShowImage = Boolean(source && !hasError);
+
+  if (shouldShowImage) {
+    return (
+      <Image
+        source={{ uri: source ?? undefined }}
+        resizeMode="cover"
+        onError={() => setHasError(true)}
+        style={styles.featureImage}
+      />
+    );
+  }
+
+  if (fallback === "planet") {
+    return (
+      <View style={styles.planetShell}>
+        <View style={[styles.planetGlow, { backgroundColor: palette.accentSoft }]} />
+        <View style={styles.planetCore} />
+        <View style={[styles.planetBands, { borderTopColor: palette.accent, borderLeftColor: palette.accentSoft }]} />
+      </View>
+    );
+  }
+
+  if (fallback === "comparison") {
+    return (
+      <View style={styles.comparisonArtwork}>
+        <View style={styles.comparisonArtworkRing}>
+          <Text style={styles.comparisonArtworkValue}>40%</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.earthShell}>
+      <View style={styles.earthGlow} />
+      <View style={styles.earthCore} />
+    </View>
+  );
+}
+
 export function ComparisonCard({ row }: { row: ComparisonRow }) {
+  const styles = useStyles();
   const colesCheaper = row.CheaperStore === "Coles";
   const woolworthsCheaper = row.CheaperStore === "Woolworths";
 
@@ -257,12 +386,14 @@ export function ComparisonCard({ row }: { row: ComparisonRow }) {
           normal={row.ColesPrice.NormalPrice}
           sale={row.ColesPrice.SalePrice}
           cheaper={colesCheaper}
+          imageLink={row.ColesProduct.ImageLink}
         />
         <StorePrice
           store="Woolworths"
           normal={row.WoolworthsPrice.NormalPrice}
           sale={row.WoolworthsPrice.SalePrice}
           cheaper={woolworthsCheaper}
+          imageLink={row.WoolworthsProduct.ImageLink}
         />
       </View>
 
@@ -275,16 +406,18 @@ export function ComparisonCard({ row }: { row: ComparisonRow }) {
   );
 }
 
-export function screenLabel(screen: "login" | "pickList" | "modifyList" | "results") {
+export function screenLabel(screen: Screen) {
   switch (screen) {
-    case "login":
-      return "1 Login";
+    case "landing":
+      return "1 Landing";
     case "pickList":
       return "2 Pick List";
     case "modifyList":
       return "3 Modify List";
+    case "loadingResults":
+      return "4 Loading Results";
     case "results":
-      return "4 Comparison Results";
+      return "5 Comparison Results";
   }
 }
 
@@ -293,15 +426,21 @@ function StorePrice({
   normal,
   sale,
   cheaper,
+  imageLink,
 }: {
   store: Store;
   normal: number;
   sale: number;
   cheaper: boolean;
+  imageLink?: string;
 }) {
+  const styles = useStyles();
   return (
     <View style={[styles.storePriceCard, cheaper && styles.storePriceCardCheaper]}>
-      <Text style={styles.storePriceLabel}>{store}</Text>
+      <View style={styles.storePriceHeader}>
+        <ProductThumbnail source={imageLink} fallbackLabel={store.slice(0, 1)} size={40} />
+        <Text style={styles.storePriceLabel}>{store}</Text>
+      </View>
       <Text style={styles.storePriceValue}>{formatCurrency(sale)}</Text>
       <Text style={styles.storePriceMeta}>Normal {formatCurrency(normal)}</Text>
     </View>
@@ -329,6 +468,8 @@ function TextInputLike({
   placeholder: string;
   onChange: (value: string) => void;
 }) {
+  const styles = useStyles();
+  const { palette } = useTheme();
   return (
     <TextInput
       value={value}
@@ -341,388 +482,553 @@ function TextInputLike({
   );
 }
 
-const styles = StyleSheet.create({
-  notice: {
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-  },
-  noticeDanger: {
-    backgroundColor: "rgba(201, 79, 79, 0.10)",
-    borderColor: "rgba(201, 79, 79, 0.28)",
-  },
-  noticeSuccess: {
-    backgroundColor: "rgba(25, 143, 109, 0.10)",
-    borderColor: "rgba(25, 143, 109, 0.24)",
-  },
-  noticeText: {
-    color: palette.text,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  infoChip: {
-    backgroundColor: palette.surfaceWarm,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: palette.line,
-    minWidth: 140,
-    flexGrow: 1,
-    gap: 4,
-  },
-  infoChipLabel: {
-    color: palette.muted,
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  infoChipValue: {
-    color: palette.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  summaryMetric: {
-    flexGrow: 1,
-    minWidth: "48%",
-    backgroundColor: palette.surfaceMuted,
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 6,
-  },
-  summaryMetricAccent: {
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accent,
-  },
-  summaryMetricLabel: {
-    color: palette.muted,
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  summaryMetricValue: {
-    color: palette.text,
-    fontSize: 17,
-    fontWeight: "900",
-  },
-  toggleChip: {
-    backgroundColor: palette.surface,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: palette.line,
-  },
-  toggleChipActive: {
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accent,
-  },
-  toggleChipText: {
-    color: palette.muted,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  toggleChipTextActive: {
-    color: palette.text,
-  },
-  primaryButton: {
-    backgroundColor: palette.accent,
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    minHeight: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButtonText: {
-    color: palette.text,
-    fontSize: 15,
-    fontWeight: "900",
-  },
-  secondaryButton: {
-    backgroundColor: palette.surfaceMuted,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    minHeight: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryButtonText: {
-    color: palette.text,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  pressed: {
-    opacity: 0.84,
-    transform: [{ scale: 0.99 }],
-  },
-  storeField: {
-    flex: 1,
-    gap: 8,
-  },
-  fieldLabel: {
-    color: palette.text,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  helperText: {
-    color: palette.muted,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  stepTrack: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 8,
-    paddingVertical: 4,
-  },
-  stepSlot: {
-    flex: 1,
-    alignItems: "center",
-    position: "relative",
-    gap: 6,
-  },
-  stepPill: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: palette.line,
-    backgroundColor: palette.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  stepPillActive: {
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accent,
-  },
-  stepPillCurrent: {
-    borderWidth: 2,
-  },
-  stepPillText: {
-    color: palette.muted,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  stepPillTextActive: {
-    color: palette.text,
-  },
-  stepLabel: {
-    color: palette.muted,
-    fontSize: 11,
-    textAlign: "center",
-  },
-  stepLabelCurrent: {
-    color: palette.text,
-    fontWeight: "700",
-  },
-  stepLine: {
-    position: "absolute",
-    top: 15,
-    right: "-50%",
-    width: "100%",
-    height: 2,
-    backgroundColor: palette.line,
-    zIndex: 0,
-  },
-  emptyCard: {
-    backgroundColor: palette.surfaceMuted,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 6,
-  },
-  emptyTitle: {
-    color: palette.text,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  emptyBody: {
-    color: palette.muted,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  listCard: {
-    backgroundColor: palette.surfaceMuted,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 10,
-  },
-  listCardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  listBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: palette.accentSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  listBadgeText: {
-    color: palette.text,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  listCardChevron: {
-    color: palette.accentDeep,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  listCardTitle: {
-    color: palette.text,
-    fontSize: 17,
-    fontWeight: "900",
-  },
-  listCardMeta: {
-    color: palette.muted,
-    fontSize: 12,
-  },
-  productCard: {
-    backgroundColor: palette.surfaceMuted,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 12,
-  },
-  productTitle: {
-    color: palette.text,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  productPillRow: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-  productPill: {
-    backgroundColor: palette.surface,
-    borderRadius: 16,
-    padding: 12,
-    minWidth: 140,
-    flexGrow: 1,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 4,
-  },
-  productPillLabel: {
-    color: palette.accentDeep,
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: "800",
-  },
-  productPillName: {
-    color: palette.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  comparisonCard: {
-    backgroundColor: palette.surfaceMuted,
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 12,
-  },
-  comparisonTopRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  comparisonTitle: {
-    color: palette.text,
-    fontSize: 16,
-    fontWeight: "900",
-    flexShrink: 1,
-  },
-  cheaperBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.line,
-  },
-  cheaperBadgeColes: {
-    backgroundColor: "rgba(25, 143, 109, 0.12)",
-    borderColor: "rgba(25, 143, 109, 0.28)",
-  },
-  cheaperBadgeWoolies: {
-    backgroundColor: "rgba(244, 183, 64, 0.20)",
-    borderColor: "rgba(244, 183, 64, 0.36)",
-  },
-  cheaperBadgeText: {
-    color: palette.text,
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  priceGrid: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  storePriceCard: {
-    flex: 1,
-    backgroundColor: palette.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: palette.line,
-    padding: 12,
-    gap: 4,
-  },
-  storePriceCardCheaper: {
-    backgroundColor: "rgba(244, 183, 64, 0.16)",
-    borderColor: palette.accent,
-  },
-  storePriceLabel: {
-    color: palette.accentDeep,
-    fontSize: 12,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  storePriceValue: {
-    color: palette.text,
-    fontSize: 18,
-    fontWeight: "900",
-  },
-  storePriceMeta: {
-    color: palette.muted,
-    fontSize: 12,
-  },
-  comparisonFooter: {
-    borderTopWidth: 1,
-    borderTopColor: palette.line,
-    paddingTop: 10,
-  },
-  comparisonFooterText: {
-    color: palette.muted,
-    fontSize: 13,
-  },
-  input: {
-    backgroundColor: palette.surfaceMuted,
-    color: palette.text,
-    borderWidth: 1,
-    borderColor: palette.line,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-  },
-});
+function useStyles() {
+  const { palette } = useTheme();
+  return useMemo(() => createStyles(palette), [palette]);
+}
+
+function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
+  return StyleSheet.create({
+    themeToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    themeIcon: {
+      color: palette.text,
+      fontSize: 26,
+      fontWeight: "200",
+    },
+    switchTrack: {
+      width: 72,
+      height: 30,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: palette.line,
+      padding: 3,
+      justifyContent: "center",
+    },
+    switchTrackDark: {
+      backgroundColor: palette.white,
+    },
+    switchTrackLight: {
+      backgroundColor: palette.surface,
+    },
+    switchThumb: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+    },
+    switchThumbDark: {
+      backgroundColor: palette.black,
+      alignSelf: "flex-end",
+    },
+    switchThumbLight: {
+      backgroundColor: palette.accent,
+      alignSelf: "flex-start",
+    },
+    notice: {
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+    },
+    noticeDanger: {
+      backgroundColor: palette.danger === "#ff3a2f" ? "rgba(201, 79, 79, 0.10)" : "rgba(215, 54, 45, 0.10)",
+      borderColor: palette.danger === "#ff3a2f" ? "rgba(201, 79, 79, 0.28)" : "rgba(215, 54, 45, 0.28)",
+    },
+    noticeSuccess: {
+      backgroundColor: palette.success === "#4ad08b" ? "rgba(25, 143, 109, 0.10)" : "rgba(29, 139, 95, 0.10)",
+      borderColor: palette.success === "#4ad08b" ? "rgba(25, 143, 109, 0.24)" : "rgba(29, 139, 95, 0.24)",
+    },
+    noticeText: {
+      color: palette.text,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    infoChip: {
+      backgroundColor: palette.surfaceWarm,
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: palette.line,
+      minWidth: 140,
+      flexGrow: 1,
+      gap: 4,
+    },
+    infoChipLabel: {
+      color: palette.muted,
+      fontSize: 11,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      fontWeight: "700",
+    },
+    infoChipValue: {
+      color: palette.text,
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    summaryMetric: {
+      flexGrow: 1,
+      minWidth: "48%",
+      backgroundColor: palette.surfaceMuted,
+      borderRadius: 18,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: palette.line,
+      gap: 6,
+    },
+    summaryMetricAccent: {
+      backgroundColor: palette.accentSoft,
+      borderColor: palette.accent,
+    },
+    summaryMetricLabel: {
+      color: palette.muted,
+      fontSize: 11,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      fontWeight: "700",
+    },
+    summaryMetricValue: {
+      color: palette.text,
+      fontSize: 17,
+      fontWeight: "900",
+    },
+    toggleChip: {
+      backgroundColor: palette.surface,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    toggleChipActive: {
+      backgroundColor: palette.accentSoft,
+      borderColor: palette.accent,
+    },
+    toggleChipText: {
+      color: palette.muted,
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    toggleChipTextActive: {
+      color: palette.text,
+    },
+    primaryButton: {
+      backgroundColor: palette.accent,
+      borderRadius: 18,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      minHeight: 50,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    primaryButtonText: {
+      color: palette.text,
+      fontSize: 15,
+      fontWeight: "900",
+    },
+    secondaryButton: {
+      backgroundColor: palette.surfaceMuted,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 18,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      minHeight: 50,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    secondaryButtonText: {
+      color: palette.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    pressed: {
+      opacity: 0.84,
+      transform: [{ scale: 0.99 }],
+    },
+    storeField: {
+      flex: 1,
+      gap: 8,
+    },
+    fieldLabel: {
+      color: palette.text,
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    helperText: {
+      color: palette.muted,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+    stepTrack: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 8,
+      paddingVertical: 4,
+    },
+    stepSlot: {
+      flex: 1,
+      alignItems: "center",
+      position: "relative",
+      gap: 6,
+    },
+    stepPill: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      borderWidth: 1,
+      borderColor: palette.line,
+      backgroundColor: palette.surface,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1,
+    },
+    stepPillActive: {
+      backgroundColor: palette.accentSoft,
+      borderColor: palette.accent,
+    },
+    stepPillCurrent: {
+      borderWidth: 2,
+    },
+    stepPillText: {
+      color: palette.muted,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    stepPillTextActive: {
+      color: palette.text,
+    },
+    stepLabel: {
+      color: palette.muted,
+      fontSize: 11,
+      textAlign: "center",
+    },
+    stepLabelCurrent: {
+      color: palette.text,
+      fontWeight: "700",
+    },
+    stepLine: {
+      position: "absolute",
+      top: 15,
+      right: "-50%",
+      width: "100%",
+      height: 2,
+      backgroundColor: palette.line,
+      zIndex: 0,
+    },
+    emptyCard: {
+      backgroundColor: palette.surfaceMuted,
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: palette.line,
+      gap: 6,
+    },
+    emptyTitle: {
+      color: palette.text,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    emptyBody: {
+      color: palette.muted,
+      fontSize: 13,
+      lineHeight: 19,
+    },
+    listCard: {
+      backgroundColor: palette.surfaceMuted,
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: palette.line,
+      gap: 10,
+    },
+    listCardTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    listBadge: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: palette.accentSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    listBadgeText: {
+      color: palette.text,
+      fontSize: 13,
+      fontWeight: "900",
+    },
+    listCardChevron: {
+      color: palette.accentDeep,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    listCardTitle: {
+      color: palette.text,
+      fontSize: 17,
+      fontWeight: "900",
+    },
+    listCardMeta: {
+      color: palette.muted,
+      fontSize: 12,
+    },
+    productCard: {
+      backgroundColor: palette.surfaceMuted,
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: palette.line,
+      gap: 12,
+    },
+    productTitle: {
+      color: palette.text,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    productPillRow: {
+      flexDirection: "row",
+      gap: 10,
+      flexWrap: "wrap",
+    },
+    productPill: {
+      backgroundColor: palette.surface,
+      borderRadius: 16,
+      padding: 12,
+      minWidth: 140,
+      flexGrow: 1,
+      borderWidth: 1,
+      borderColor: palette.line,
+      gap: 10,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    productPillCopy: {
+      flex: 1,
+      gap: 4,
+    },
+    productPillLabel: {
+      color: palette.accentDeep,
+      fontSize: 11,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      fontWeight: "800",
+    },
+    productPillName: {
+      color: palette.text,
+      fontSize: 14,
+      fontWeight: "800",
+    },
+    productThumb: {
+      backgroundColor: palette.surfaceWarm,
+    },
+    productThumbFallback: {
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    productThumbFallbackText: {
+      color: palette.text,
+      fontSize: 13,
+      fontWeight: "900",
+    },
+    featureImage: {
+      width: "100%",
+      height: "100%",
+      borderRadius: 30,
+      backgroundColor: palette.surfaceWarm,
+    },
+    planetShell: {
+      width: 250,
+      height: 250,
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+    },
+    planetGlow: {
+      position: "absolute",
+      top: 20,
+      left: 20,
+      right: 20,
+      bottom: 20,
+      borderRadius: 125,
+      opacity: 0.25,
+      shadowColor: palette.accentDeep,
+      shadowOpacity: 0.6,
+      shadowRadius: 28,
+      shadowOffset: { width: 0, height: 0 },
+    },
+    planetCore: {
+      width: 180,
+      height: 180,
+      borderRadius: 90,
+      backgroundColor: palette.surfaceWarm,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    planetBands: {
+      position: "absolute",
+      width: 180,
+      height: 180,
+      borderRadius: 90,
+      backgroundColor: "transparent",
+      borderTopWidth: 22,
+      borderTopColor: palette.accent,
+      borderLeftWidth: 8,
+      borderLeftColor: palette.accentSoft,
+      transform: [{ rotate: "-12deg" }],
+    },
+    comparisonArtwork: {
+      width: 160,
+      height: 160,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 80,
+      borderWidth: 10,
+      borderColor: palette.line,
+      borderTopColor: palette.text,
+      alignSelf: "center",
+    },
+    comparisonArtworkRing: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    comparisonArtworkValue: {
+      color: palette.text,
+      fontSize: 34,
+      fontWeight: "300",
+    },
+    earthShell: {
+      width: 250,
+      height: 250,
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+    },
+    earthGlow: {
+      position: "absolute",
+      top: 20,
+      left: 20,
+      right: 20,
+      bottom: 20,
+      borderRadius: 125,
+      backgroundColor: palette.accentSoft,
+      opacity: 0.18,
+    },
+    earthCore: {
+      width: 180,
+      height: 180,
+      borderRadius: 90,
+      backgroundColor: palette.surfaceWarm,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    comparisonCard: {
+      backgroundColor: palette.surfaceMuted,
+      borderRadius: 22,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: palette.line,
+      gap: 12,
+    },
+    comparisonTopRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    comparisonTitle: {
+      color: palette.text,
+      fontSize: 16,
+      fontWeight: "900",
+      flexShrink: 1,
+    },
+    cheaperBadge: {
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      backgroundColor: palette.surface,
+      borderWidth: 1,
+      borderColor: palette.line,
+    },
+    cheaperBadgeColes: {
+      backgroundColor: "rgba(25, 143, 109, 0.12)",
+      borderColor: "rgba(25, 143, 109, 0.28)",
+    },
+    cheaperBadgeWoolies: {
+      backgroundColor: "rgba(244, 183, 64, 0.20)",
+      borderColor: "rgba(244, 183, 64, 0.36)",
+    },
+    cheaperBadgeText: {
+      color: palette.text,
+      fontSize: 11,
+      fontWeight: "900",
+    },
+    priceGrid: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    storePriceCard: {
+      flex: 1,
+      backgroundColor: palette.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: palette.line,
+      padding: 12,
+      gap: 8,
+    },
+    storePriceCardCheaper: {
+      backgroundColor: "rgba(244, 183, 64, 0.16)",
+      borderColor: palette.accent,
+    },
+    storePriceHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    storePriceLabel: {
+      color: palette.accentDeep,
+      fontSize: 12,
+      fontWeight: "800",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      flexShrink: 1,
+    },
+    storePriceValue: {
+      color: palette.text,
+      fontSize: 18,
+      fontWeight: "900",
+    },
+    storePriceMeta: {
+      color: palette.muted,
+      fontSize: 12,
+    },
+    comparisonFooter: {
+      borderTopWidth: 1,
+      borderTopColor: palette.line,
+      paddingTop: 10,
+    },
+    comparisonFooterText: {
+      color: palette.muted,
+      fontSize: 13,
+    },
+    input: {
+      backgroundColor: palette.surfaceMuted,
+      color: palette.text,
+      borderWidth: 1,
+      borderColor: palette.line,
+      borderRadius: 18,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 15,
+    },
+  });
+}
