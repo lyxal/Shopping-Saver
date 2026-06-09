@@ -63,6 +63,9 @@ export function normalizeLists(payload: unknown): ListSummary[] {
             typeof candidate.ListName === "string"
               ? candidate.ListName
               : "Untitled list",
+          ProductCount: candidate.ProductCount ?? 0,
+          CreatedAt: candidate.CreatedAt,
+          LastEdited: candidate.LastEdited,
         };
       })
       .filter((item): item is ListSummary => item !== null);

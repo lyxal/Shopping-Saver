@@ -11,6 +11,9 @@ export type EntryCoverage = "both" | "coles" | "woolworths";
 export type ListSummary = {
   ListID: string;
   ListName: string;
+  ProductCount: number;
+  CreatedAt: string;
+  LastEdited: string;
 };
 
 export type ProductRecord = {

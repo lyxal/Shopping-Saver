@@ -54,7 +54,7 @@ export default function ModifyListScreen({
   const [overlayMode, setOverlayMode] = useState<OverlayMode | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | undefined>(undefined);
 
-  const title = useMemo(() => `Editing “${list.ListName}”`, [list.ListName]);
+  const title = useMemo(() => `Editing "${list.ListName}"`, [list.ListName]);
 
   const detectStoreFromLink = (link: string): string | null => {
     if (!link) return null;
@@ -195,15 +195,20 @@ export default function ModifyListScreen({
             <View style={styles.overlayCoverageRow}>
               {entryMode === "name" ? (
                 <>
-                  <ToggleChip
-                    label="Same name"
+                 <ToggleChip
+                    label="Different names"
                     active={draft.coverage === "both"}
                     onPress={() => onDraftChange("coverage", "both")}
                   />
                   <ToggleChip
-                    label="Different names"
+                    label="Coles name"
                     active={draft.coverage === "coles"}
                     onPress={() => onDraftChange("coverage", "coles")}
+                  />
+                  <ToggleChip
+                    label="Woolworths name"
+                    active={draft.coverage === "woolworths"}
+                    onPress={() => onDraftChange("coverage", "woolworths")}
                   />
                 </>
               ) : (
@@ -229,7 +234,7 @@ export default function ModifyListScreen({
 
               {entryMode === "name" ? (
                 <>
-                  {draft.coverage === "both" ? (
+                  {draft.coverage === "coles" ? (
                     <TextInput
                       value={draft.coles}
                       onChangeText={(value) => onDraftChange("coles", value)}
@@ -238,7 +243,14 @@ export default function ModifyListScreen({
                       autoCapitalize="words"
                       style={styles.overlayInput}
                     />
-                  ) : (
+                  )  :  draft.coverage === "woolworths" ? (<TextInput
+                      value={draft.woolworths}
+                      onChangeText={(value) => onDraftChange("woolworths", value)}
+                      placeholder="Enter product name"
+                      placeholderTextColor={palette.muted}
+                      autoCapitalize="words"
+                      style={styles.overlayInput}
+                    />) : (
                     <View style={styles.dualFieldsContainer}>
                       <TextInput
                         value={draft.coles}

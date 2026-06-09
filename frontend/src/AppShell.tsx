@@ -109,6 +109,7 @@ export default function AppShell() {
 
   const loadLists = async (userId: string) => {
     const response = await apiFetch<unknown>(`/getlists/${encodeURIComponent(userId)}`);
+    console.log("Fetched lists:", response);
     const nextLists = normalizeLists(response);
     setField("lists", nextLists);
     return nextLists;
@@ -186,7 +187,7 @@ export default function AppShell() {
         body: JSON.stringify({ UserID: state.userId, ListName: listName }),
       });
 
-      const createdList: ListSummary = { ListID: payload.ListID, ListName: listName };
+      const createdList: ListSummary = { ListID: payload.ListID, ListName: listName, ProductCount: 0, CreatedAt: new Date().toISOString(), LastEdited: new Date().toISOString() };
       setField("lists", [createdList, ...state.lists]);
       setField("activeList", createdList);
       setField("newListName", "");
@@ -203,15 +204,12 @@ export default function AppShell() {
   };
 
   const validateDraft = (draft: EntryDraft) => {
-    const needsColes = draft.coverage === "both" || draft.coverage === "coles";
-    const needsWoolworths = draft.coverage === "both" || draft.coverage === "woolworths";
+    const needsBoth = draft.coverage === "both";
 
-    if (needsColes && !draft.coles.trim()) {
-      return "Enter the Coles value first.";
+    if (needsBoth && (!draft.coles.trim() || !draft.woolworths.trim())) {
+      return "Enter values for both stores.";
     }
-    if (needsWoolworths && !draft.woolworths.trim()) {
-      return "Enter the Woolworths value first.";
-    }
+
     return null;
   };
 
@@ -440,6 +438,12 @@ export default function AppShell() {
                   setField("compareResult", null);
                   navigate({ screen: "modifyList", listId: list.ListID });
                   void ensureListContext(list.ListID);
+                }}
+                onDirectCompare={(list) => {
+                  setField("activeList", list);
+                  setField("screen", "loadingResults");
+                  setField("compareResult", null);
+                  navigate({ screen: "loadingResults", listId: list.ListID });
                 }}
               onBackToLogin={() => {
                 clearSnapshot();

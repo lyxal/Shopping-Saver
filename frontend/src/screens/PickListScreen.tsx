@@ -12,6 +12,7 @@ export default function PickListScreen({
   onCreateList,
   onPickList,
   onBackToLogin,
+  onDirectCompare,
 }: {
   lists: ListSummary[];
   loading: boolean;
@@ -20,6 +21,7 @@ export default function PickListScreen({
   onCreateList: () => void;
   onPickList: (list: ListSummary) => void;
   onBackToLogin: () => void;
+  onDirectCompare: (list: ListSummary) => void;
 }) {
   const { palette } = useTheme();
   const styles = useMemo(() => createStyles(palette), [palette]);
@@ -54,22 +56,22 @@ export default function PickListScreen({
             <EmptyState title="No lists yet" body="Create your first shopping list to begin." />
           ) : (
             lists.map((list) => (
-              <Pressable key={list.ListID} onPress={() => onPickList(list)} style={styles.listCard}>
+              <View key={list.ListID} style={styles.listCard}>
                 <View style={styles.listCardContent}>
                   <View style={styles.listCardLeft}>
                     <Text style={styles.listTitle}>{list.ListName}</Text>
-                    <Text style={styles.listMeta}>xx items • Created xx/yy/zz • Last Edited xx/yy/zz</Text>
+                    <Text style={styles.listMeta}>{list.ProductCount} item(s) • Created {new Date(list.CreatedAt).toLocaleDateString()} • Last Edited {new Date(list.LastEdited).toLocaleDateString()}</Text>
                   </View>
                   <View style={styles.listCardRight}>
-                    <Pressable style={styles.editButton}>
+                    <Pressable onPress={() => onPickList(list)} style={styles.editButton}>
                       <Text style={styles.editButtonText}>Edit</Text>
                     </Pressable>
-                    <Pressable style={styles.compareButton}>
+                    <Pressable style={styles.compareButton} onPress={() => onDirectCompare(list)}>
                       <Text style={styles.compareButtonText}>Compare</Text>
                     </Pressable>
                   </View>
                 </View>
-              </Pressable>
+              </View>
             ))
           )}
         </View>

@@ -85,11 +85,8 @@ export default function ResultsScreen({
         </View>
 
         <View style={styles.actionButtons}>
-          <Pressable style={[styles.actionButton, styles.actionButtonSecondary]} onPress={onBackToEdit}>
-            <Text style={styles.actionButtonTextSecondary}>Edit List</Text>
-          </Pressable>
           <Pressable style={[styles.actionButton, styles.actionButtonPrimary]} onPress={onPickAnother}>
-            <Text style={styles.actionButtonTextPrimary}>Compare Another</Text>
+            <Text style={styles.actionButtonTextPrimary}>Back to Lists</Text>
           </Pressable>
         </View>
       </View>

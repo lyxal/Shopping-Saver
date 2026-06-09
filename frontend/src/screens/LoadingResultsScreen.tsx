@@ -53,7 +53,7 @@ export default function LoadingResultsScreen({
       </Animated.View>
 
       <View style={styles.planetFrame}>
-        <FeatureArtwork fallback="comparison" />
+        <FeatureArtwork source="assets/images/Planet Splash.png" fallback="comparison" />
       </View>
     </View>
   );

@@ -339,11 +339,9 @@ export function FeatureArtwork({
 
   if (fallback === "comparison") {
     return (
-      <View style={styles.comparisonArtwork}>
-        <View style={styles.comparisonArtworkRing}>
-          <Text style={styles.comparisonArtworkValue}>40%</Text>
+      <View>
+          <Text>Loading</Text>
         </View>
-      </View>
     );
   }
 
@@ -890,29 +888,6 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       borderLeftWidth: 8,
       borderLeftColor: palette.accentSoft,
       transform: [{ rotate: "-12deg" }],
-    },
-    comparisonArtwork: {
-      width: 160,
-      height: 160,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 80,
-      borderWidth: 10,
-      borderColor: palette.line,
-      borderTopColor: palette.text,
-      alignSelf: "center",
-    },
-    comparisonArtworkRing: {
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    comparisonArtworkValue: {
-      color: palette.text,
-      fontSize: 34,
-      fontWeight: "300",
     },
     earthShell: {
       width: 250,

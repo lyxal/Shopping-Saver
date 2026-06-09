@@ -32,7 +32,7 @@ export default function LandingScreen({
       </View>
 
       <View style={styles.artworkWrap}>
-        <FeatureArtwork fallback="planet" />
+        <FeatureArtwork source="assests/images/Planet Splash.png" fallback="planet" />
       </View>
 
       <View style={styles.emailPanel}>
@@ -41,7 +41,7 @@ export default function LandingScreen({
             value={email}
             onChangeText={onEmailChange}
             onSubmitEditing={onContinue}
-            placeholder="Email Value"
+            placeholder="Email"
             placeholderTextColor={palette.muted}
             autoCapitalize="none"
             keyboardType="email-address"
