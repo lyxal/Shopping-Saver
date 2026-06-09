@@ -34,22 +34,21 @@ export default function LandingScreen({
       </View>
 
       <View style={styles.emailPanel}>
-        <Text style={styles.emailLabel}>Email</Text>
         <View style={styles.emailInputWrap}>
           <TextInput
             value={email}
             onChangeText={onEmailChange}
-            placeholder="Enter email value"
+            placeholder="Email Value"
             placeholderTextColor={palette.muted}
             autoCapitalize="none"
             keyboardType="email-address"
             style={styles.emailInput}
           />
-          <Pressable onPress={onContinue} style={styles.submitDot}>
+          <Pressable onPress={onContinue} style={styles.submitDot} disabled={loading}>
             {loading ? (
-              <ActivityIndicator color={palette.black} />
+              <ActivityIndicator color={palette.white} size="small" />
             ) : (
-              <Text style={styles.submitDotText}>↗</Text>
+              <View style={styles.submitDotIcon} />
             )}
           </Pressable>
         </View>
@@ -63,45 +62,46 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     page: {
       minHeight: 720,
       backgroundColor: palette.background,
-      paddingHorizontal: 18,
-      paddingTop: 20,
-      paddingBottom: 28,
+      paddingHorizontal: 24,
+      paddingTop: 24,
+      paddingBottom: 40,
       justifyContent: "space-between",
     },
     topBar: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
+      marginBottom: 20,
     },
     brand: {
       color: palette.text,
-      fontSize: 54,
+      fontSize: 48,
       fontWeight: "300",
-      letterSpacing: -2,
+      letterSpacing: -1.5,
     },
     hero: {
       alignItems: "center",
-      marginTop: 10,
+      marginBottom: 40,
     },
     heroTitle: {
       color: palette.text,
       textAlign: "center",
-      fontSize: 68,
-      lineHeight: 72,
+      fontSize: 58,
+      lineHeight: 64,
       fontWeight: "300",
-      letterSpacing: -2.4,
+      letterSpacing: -1.5,
     },
     artworkWrap: {
       alignItems: "center",
       justifyContent: "center",
       flex: 1,
-      minHeight: 320,
+      minHeight: 340,
+      marginVertical: 30,
     },
     emailPanel: {
       width: "100%",
       maxWidth: 520,
       alignSelf: "center",
-      marginTop: 8,
     },
     emailLabel: {
       color: palette.muted,
@@ -115,28 +115,37 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     emailInputWrap: {
       flexDirection: "row",
       alignItems: "center",
-      borderWidth: 2,
+      borderWidth: 1.5,
       borderColor: palette.line,
-      borderRadius: 6,
-      paddingLeft: 18,
+      borderRadius: 20,
+      paddingLeft: 24,
+      paddingRight: 8,
       backgroundColor: palette.background,
+      height: 56,
     },
     emailInput: {
       flex: 1,
       color: palette.text,
-      fontSize: 28,
-      fontWeight: "300",
-      paddingVertical: 20,
+      fontSize: 16,
+      fontWeight: "400",
+      paddingVertical: 16,
       paddingRight: 12,
     },
     submitDot: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      backgroundColor: palette.accentSoft,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: palette.accent,
       alignItems: "center",
       justifyContent: "center",
-      marginRight: 16,
+      marginRight: 8,
+    },
+    submitDotIcon: {
+      width: 16,
+      height: 16,
+      backgroundColor: palette.white,
+      borderRadius: 1,
+      transform: [{ rotate: "45deg" }],
     },
     submitDotText: {
       color: palette.black,
