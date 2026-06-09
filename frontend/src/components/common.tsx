@@ -501,18 +501,18 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     },
     switchTrack: {
       width: 72,
-      height: 30,
-      borderRadius: 999,
-      borderWidth: 1,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 1.5,
       borderColor: palette.line,
-      padding: 3,
+      padding: 4,
       justifyContent: "center",
     },
     switchTrackDark: {
-      backgroundColor: palette.white,
+      backgroundColor: palette.black,
     },
     switchTrackLight: {
-      backgroundColor: palette.surface,
+      backgroundColor: palette.white,
     },
     switchThumb: {
       width: 24,
@@ -520,7 +520,7 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       borderRadius: 12,
     },
     switchThumbDark: {
-      backgroundColor: palette.black,
+      backgroundColor: palette.white,
       alignSelf: "flex-end",
     },
     switchThumbLight: {
@@ -528,22 +528,24 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
       alignSelf: "flex-start",
     },
     notice: {
-      borderRadius: 16,
+      borderRadius: 14,
       padding: 14,
-      borderWidth: 1,
+      borderWidth: 1.5,
+      marginBottom: 16,
     },
     noticeDanger: {
-      backgroundColor: palette.danger === "#ff3a2f" ? "rgba(201, 79, 79, 0.10)" : "rgba(215, 54, 45, 0.10)",
-      borderColor: palette.danger === "#ff3a2f" ? "rgba(201, 79, 79, 0.28)" : "rgba(215, 54, 45, 0.28)",
+      backgroundColor: palette.danger === "#ff3a2f" ? "rgba(255, 58, 47, 0.08)" : "rgba(215, 54, 45, 0.08)",
+      borderColor: palette.danger === "#ff3a2f" ? "rgba(255, 58, 47, 0.24)" : "rgba(215, 54, 45, 0.24)",
     },
     noticeSuccess: {
-      backgroundColor: palette.success === "#4ad08b" ? "rgba(25, 143, 109, 0.10)" : "rgba(29, 139, 95, 0.10)",
-      borderColor: palette.success === "#4ad08b" ? "rgba(25, 143, 109, 0.24)" : "rgba(29, 139, 95, 0.24)",
+      backgroundColor: palette.success === "#4ad08b" ? "rgba(74, 208, 139, 0.08)" : "rgba(29, 139, 95, 0.08)",
+      borderColor: palette.success === "#4ad08b" ? "rgba(74, 208, 139, 0.24)" : "rgba(29, 139, 95, 0.24)",
     },
     noticeText: {
       color: palette.text,
       fontSize: 14,
       lineHeight: 20,
+      fontWeight: "400",
     },
     infoChip: {
       backgroundColor: palette.surface,
@@ -651,17 +653,18 @@ function createStyles(palette: ReturnType<typeof useTheme>["palette"]) {
     },
     storeField: {
       flex: 1,
-      gap: 8,
+      gap: 10,
     },
     fieldLabel: {
       color: palette.text,
       fontSize: 13,
-      fontWeight: "800",
+      fontWeight: "600",
     },
     helperText: {
       color: palette.muted,
       fontSize: 12,
       lineHeight: 18,
+      fontWeight: "400",
     },
     stepTrack: {
       flexDirection: "row",
