@@ -138,99 +138,32 @@ app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest reque
 
 app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
 {
-    var names = request.ProductNames;
+    var productName = request.ProductName;
     FactProduct woolworthsProduct;
     FactProduct colesProduct;
 
-    names.TryGetValue("Woolworths", out string? wName);
-    names.TryGetValue("Coles", out string? cName);
-
     // Similar logic to the /addProductFromLink endpoint, but with product names instead of links.
 
-    if (wName != null && cName != null)
-    {
-        var potentialWoolworthsProducts = SupermarketAPI.SearchWoolworths(wName);
-        var potentialColesProducts = SupermarketAPI.SearchColes(cName);
 
-        if (potentialColesProducts.Count != 1 || potentialWoolworthsProducts.Count != 1)
-        {
-            return Results.Ok(
-                new
-                {
-                    Success = false,
-                    Message = "Multiple or no products found for the given names. Please refine your search.",
-                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink }),
-                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
-                }
-            );
-        }
+    var potentialWoolworthsProducts = SupermarketAPI.SearchWoolworths(productName);
+    var potentialColesProducts = SupermarketAPI.SearchColes(productName);
+
+    if (potentialColesProducts.Count != 1 || potentialWoolworthsProducts.Count != 1)
+    {
+        return Results.Ok(
+            new
+            {
+                Success = false,
+                Message = "Multiple or no products found for the given names. Please refine your search.",
+                WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink }),
+                ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
+            }
+        );
+    }
 
 
-        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(potentialWoolworthsProducts.First().Link);
-        colesProduct = factProductsDb.GetOrFetchFromColesLink(potentialColesProducts.First().Link);
-    }
-    else if (wName != null)
-    {
-        var potentialWoolworthsProducts = SupermarketAPI.SearchWoolworths(wName);
-        if (potentialWoolworthsProducts.Count != 1)
-        {
-            return Results.Ok(
-                new
-                {
-                    Success = false,
-                    Message = "Multiple or no products found for the given Woolworths name. Please refine your search.",
-                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
-                }
-            );
-        }
-        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(potentialWoolworthsProducts.First().Link);
-        var potentialColesProducts = SupermarketAPI.SearchColes(woolworthsProduct.Name);
-        if (potentialColesProducts.Count != 1)
-        {
-            return Results.Ok(
-                new
-                {
-                    Success = false,
-                    Message = "Multiple or no products found for the given Coles name. Please refine your search.",
-                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
-                }
-            );
-        }
-        colesProduct = factProductsDb.GetOrFetchFromColesLink(potentialColesProducts.First().Link);
-    }
-    else if (cName != null)
-    {
-        var potentialColesProducts = SupermarketAPI.SearchColes(cName);
-        if (potentialColesProducts.Count != 1)
-        {
-            return Results.Ok(
-                new
-                {
-                    Success = false,
-                    Message = "Multiple or no products found for the given Coles name. Please refine your search.",
-                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
-                }
-            );
-        }
-        colesProduct = factProductsDb.GetOrFetchFromColesLink(potentialColesProducts.First().Link);
-        var potentialWoolworthsProducts = SupermarketAPI.SearchWoolworths(colesProduct.Name);
-        if (potentialWoolworthsProducts.Count != 1)
-        {
-            return Results.Ok(
-                new
-                {
-                    Success = false,
-                    Message = "Multiple or no products found for the given Woolworths name. Please refine your search.",
-                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
-                }
-            );
-        }
-        woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(potentialWoolworthsProducts.First().Link);
-    }
-    else
-    {
-        return Results.BadRequest("No product names provided.");
-    }
+    woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(potentialWoolworthsProducts.First().Link);
+    colesProduct = factProductsDb.GetOrFetchFromColesLink(potentialColesProducts.First().Link);
 
     listsDb.AddComparisonToList(request.UserID, request.ListID, colesProduct, woolworthsProduct);
 

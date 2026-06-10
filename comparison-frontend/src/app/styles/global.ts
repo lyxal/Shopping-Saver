@@ -13,15 +13,19 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   modal: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -150 }, { translateY: -100 }],
     width: 300,
     padding: 20,
     backgroundColor: "#222222",
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#444444",
+  },
+  input: {
+    backgroundColor: "#333333",
+    color: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#444444",
+    padding: 10,
+    marginBottom: 10,
   }
 });
