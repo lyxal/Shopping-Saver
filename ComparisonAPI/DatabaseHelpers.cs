@@ -161,7 +161,7 @@ public class FactProductsDatabase
         }
         else
         {
-            var woolworthsProduct = SupermarketAPI.GetWoolworthsProductFor(productLink);
+            var woolworthsProduct = SupermarketAPI.GetWoolworthsProductFor(productLink, Guid.NewGuid().ToString());
             _productsCollection.InsertOne(new BsonDocument
             {
                 { "ProductID", woolworthsProduct.ProductID },
@@ -190,7 +190,7 @@ public class FactProductsDatabase
         }
         else
         {
-            var colesProduct = SupermarketAPI.GetColesProductFor(productLink);
+            var colesProduct = SupermarketAPI.GetColesProductFor(productLink, Guid.NewGuid().ToString());
             _productsCollection.InsertOne(new BsonDocument
             {
                 { "ProductID", colesProduct.ProductID },

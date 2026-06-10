@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -219,22 +220,22 @@ app.MapPost("/compare", async (CompareRequest request) =>
         switch (product)
         {
             case FactProduct p when p.Store == "Woolworths":
-                var woolworthsPrice = SupermarketAPI.GetWoolworthsPriceFor(p.Link);
+                var woolworthsPrice = SupermarketAPI.GetWoolworthsPriceFor(p.Link, p.ProductID);
                 pricedProductsDb.UpsertPrice(woolworthsPrice);
                 prices[p.ProductID] = woolworthsPrice;
                 break;
             case FactProduct p when p.Store == "Coles":
-                var colesPrice = SupermarketAPI.GetColesPriceFor(p.Link);
+                var colesPrice = SupermarketAPI.GetColesPriceFor(p.Link, p.ProductID);
                 pricedProductsDb.UpsertPrice(colesPrice);
                 prices[p.ProductID] = colesPrice;
                 break;
             case PricedProduct p when p.Store == "Woolworths":
-                var updatedWoolworthsPrice = SupermarketAPI.GetWoolworthsPriceFor(p.ProductLink);
+                var updatedWoolworthsPrice = SupermarketAPI.GetWoolworthsPriceFor(p.ProductLink, p.ProductID);
                 pricedProductsDb.UpsertPrice(updatedWoolworthsPrice);
                 prices[p.ProductID] = updatedWoolworthsPrice;
                 break;
             case PricedProduct p when p.Store == "Coles":
-                var updatedColesPrice = SupermarketAPI.GetColesPriceFor(p.ProductLink);
+                var updatedColesPrice = SupermarketAPI.GetColesPriceFor(p.ProductLink, p.ProductID);
                 pricedProductsDb.UpsertPrice(updatedColesPrice);
                 prices[p.ProductID] = updatedColesPrice;
                 break;
@@ -300,6 +301,35 @@ app.MapPost("/compare", async (CompareRequest request) =>
 
 });
 
+app.MapPost("/testScrapeW", async (JsonElement body) =>
+{
+    var link = body.GetProperty("link").GetString()!;
+    var price = SupermarketAPI.GetWoolworthsPriceFor(link, "test");
+    return Results.Ok(price);
+});
+
+app.MapPost("/testScrapeC", async (JsonElement body) =>
+{
+    var link = body.GetProperty("link").GetString()!;
+    var price = SupermarketAPI.GetColesPriceFor(link, "test");
+    return Results.Ok(price);
+});
+
+app.MapPost("/testSearchC", async (JsonElement body) =>
+{
+    var query = body.GetProperty("query").GetString()!;
+    var results = SupermarketAPI.SearchColes(query);
+    return Results.Ok(new { Products = results });
+});
+
+app.MapPost("/testSearchW", async (JsonElement body) =>
+{
+    var query = body.GetProperty("query").GetString()!;
+    var results = SupermarketAPI.SearchWoolworths(query);
+    return Results.Ok(new { Products = results });
+});
+
+
 app.Use(async (context, next) =>
 {
     context.Request.EnableBuffering();
@@ -314,6 +344,7 @@ app.Use(async (context, next) =>
     }
     catch (BadHttpRequestException ex) when (ex.StatusCode == 400)
     {
+        Console.WriteLine($"Bad request: {ex.Message}");
         context.Response.StatusCode = 400;
         await context.Response.WriteAsJsonAsync(new { error = ex.Message });
     }

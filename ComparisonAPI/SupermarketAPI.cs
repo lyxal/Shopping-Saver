@@ -1,50 +1,220 @@
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
+
 static class SupermarketAPI
 {
-    static public PricedProduct GetWoolworthsPriceFor(string productLink)
+
+    static private CookieContainer GetWoolworthsCookies()
     {
-        // Placeholder implementation
-        // Returns random prices for now.
-        decimal normalPrice = (decimal)(Random.Shared.NextDouble() * 20 + 5); // Normal price between $5 and $25
-        decimal salePrice = normalPrice * (decimal)(0.5 + Random.Shared.NextDouble() * 0.5); // Sale price between 50% and 100% of normal price
-        return new PricedProduct(Guid.NewGuid().ToString(), "Woolworths", normalPrice, salePrice, DateTime.UtcNow, productLink);
+        var cookies = new CookieContainer(); // These are the OUTPUT cookies.
+        var handler = new HttpClientHandler(); // Cookieless because we need to capture the cookies from the initial request.
+        var client = new HttpClient(handler);
+        var response = client.GetAsync("https://woolworths.com.au");
+        response.Wait();
+        var setCookieHeaders = response.Result.Headers.GetValues("Set-Cookie");
+        foreach (var header in setCookieHeaders)
+        {
+            cookies.SetCookies(new Uri("https://woolworths.com.au"), header);
+        }
+        return cookies;
+    }
+    static public PricedProduct GetWoolworthsPriceFor(string productLink, string productID)
+    {
+        var cookies = GetWoolworthsCookies(); // Need to get cookies every time because they expire.
+        var handler = new HttpClientHandler { CookieContainer = cookies };
+        var client = new HttpClient(handler);
+
+        var productPageResponse = client.GetAsync(productLink);
+        productPageResponse.Wait();
+
+        if (!productPageResponse.Result.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Failed to fetch product page: {productPageResponse.Result.StatusCode}");
+        }
+
+
+        // Extract the HTML content from the response
+        var htmlTask = productPageResponse.Result.Content.ReadAsStringAsync();
+        htmlTask.Wait();
+        var htmlContent = htmlTask.Result;
+        // Parse the HTML content to extract the product price
+        var pricedProduct = WoolworthsScraper.ExtractPricedProduct(htmlContent);
+        return pricedProduct with { ProductID = productID, ProductLink = productLink };
     }
 
-    static public PricedProduct GetColesPriceFor(string productLink)
+    static public PricedProduct GetColesPriceFor(string productLink, string productID)
     {
-        // Placeholder implementation
-        decimal normalPrice = (decimal)(Random.Shared.NextDouble() * 20 + 5); // Normal price between $5 and $25
-        decimal salePrice = normalPrice * (decimal)(0.5 + Random.Shared.NextDouble() * 0.5); // Sale price between 50% and 100% of normal price
-        return new PricedProduct(Guid.NewGuid().ToString(), "Coles", normalPrice, salePrice, DateTime.UtcNow, productLink);
+        var colesProductID = productLink.Split('-').Last(); // Coles product links end with the product ID, so we can extract it from the link.
+        Console.WriteLine($"Extracted Coles product ID: {colesProductID} from link: {productLink}");
+        var apiURL = "https://www.coles.com.au/api/graphql";
+
+        var payload = new
+        {
+            query = @"query GetProductsInfo($productIds: [String!]!, $brandedStoreId: BrandedId!, $shoppingMethod: ShoppingMethod, $filters: ProductsInfoFilters) {
+  productsInfo(
+    productIds: $productIds
+    brandedStoreId: $brandedStoreId
+    shoppingMethod: $shoppingMethod
+    filters: $filters
+  ) {
+    count: noOfResults
+    invalidProductIds: invalidProducts
+    results {
+      ...productsInfoFields
+    }
+  }
+}
+
+fragment productsInfoFields on InfoProduct {
+  id
+  name
+  brand
+  description
+  internalDescription
+  size
+  imageUris {
+    altText
+    type
+    uri
+  }
+  restrictions {
+    retailLimit
+    promotionalLimit
+    liquorAgeRestrictionFlag
+    tobaccoAgeRestrictionFlag
+    delivery
+    restrictedByOrganisation
+  }
+  continuity {
+    continuityPromotionId
+    creditsToRedeem
+    bonusAvailable
+    bonusTimes
+    bonusPromoName
+    bonusRoundelDisplayable
+    bonusRoundelDescription
+  }
+  collectableCampaign
+  lastUpdated
+  availability
+  availabilityType
+  availabilityStatus
+  merchandiseHeir {
+    tradeProfitCentre
+    categoryGroup
+    category
+    subCategory
+    className
+  }
+  onlineHeirs {
+    aisle
+    category
+    subCategory
+    categoryId
+    aisleId
+    subCategoryId
+  }
+  pricing {
+    now
+    was
+    saveAmount
+    saveStatement
+    unit {
+      quantity
+      ofMeasureQuantity
+      ofMeasureUnits
+      price
+      ofMeasureType
+      isWeighted
+      isIncremental
+    }
+    comparable
+    promotionType
+    onlineSpecial
+    multiBuyPromotion {
+      type
+      id
+      minQuantity
+      reward
+      unitPriceDisplay
+      instruction
+    }
+    priceDescription
+    savePercent
+    specialType
+    offerDescription
+  }
+  minGuarantee
+}",
+            variables = new
+            {
+                productIds = new[] { colesProductID },
+                brandedStoreId = "COL:7674",
+                filters = new
+                {
+                    availability = true,
+                    hasPricing = true
+                }
+            },
+            operationName = "GetProductsInfo"
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+        client.DefaultRequestHeaders.Add("ocp-apim-subscription-key", "eae83861d1cd4de6bb9cd8a2cd6f041e");
+        var response = client.PostAsync(apiURL, content);
+        response.Wait();
+
+        if (!response.Result.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Failed to fetch product info: {response.Result.StatusCode}");
+        }
+
+        var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
+        var jsonResponse = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(rawResponse);
+        Console.WriteLine($"Raw Coles API response: {rawResponse}");
+        var productInfo = (jsonResponse?["data"].GetProperty("productsInfo").GetProperty("results")[0]) ?? throw new InvalidOperationException("Product not found in Coles API response");
+        return new PricedProduct(
+            ProductID: productID,
+            Store: "Coles",
+            NormalPrice: productInfo.GetProperty("pricing").GetProperty("was").GetDecimal(),
+            SalePrice: productInfo.GetProperty("pricing").GetProperty("now").GetDecimal(),
+            LastChecked: DateTime.UtcNow,
+            ProductLink: productLink
+        );
     }
 
-    static public FactProduct GetWoolworthsProductFor(string productLink)
+    static public FactProduct GetWoolworthsProductFor(string productLink, string productID)
     {
         // Placeholder implementation
         var productName = Uri.UnescapeDataString(productLink.AsSpan(productLink.LastIndexOf('/') + 1));
-        return new FactProduct(Guid.NewGuid().ToString(), productName, "Woolworths", productLink, "https://example.com/image.jpg");
+        return new FactProduct(productID, productName, "Woolworths", productLink, "https://example.com/image.jpg");
     }
 
-    static public FactProduct GetColesProductFor(string productLink)
+    static public FactProduct GetColesProductFor(string productLink, string productID)
     {
         // Placeholder implementation
         var productName = Uri.UnescapeDataString(productLink.AsSpan(productLink.LastIndexOf('/') + 1));
-        return new FactProduct(Guid.NewGuid().ToString(), productName, "Coles", productLink, "https://example.com/image.jpg");
+        return new FactProduct(productID, productName, "Coles", productLink, "https://example.com/image.jpg");
     }
 
-    static public string? FindProductByNameAtWoolworths(string productName)
+    static public string? FindProductByNameAtWoolworths(string query)
     {
         // Get the product link for the given product name from Woolworths. 
         // Returns an optional because Woolworths might not stock the product.
         // Placeholder implementation - in a real implementation, this would search the Woolworths website for the product and return a link if found.
-        return "https://www.woolworths.com.au/product/" + Uri.EscapeDataString(productName);
+        return "https://www.woolworths.com.au/product/" + Uri.EscapeDataString(query);
     }
 
-    static public string? FindProductByNameAtColes(string productName)
+    static public string? FindProductByNameAtColes(string query)
     {
         // Get the product link for the given product name from Coles. 
         // Returns an optional because Coles might not stock the product.
         // Placeholder implementation - in a real implementation, this would search the Coles website for the product and return a link if found.
-        return "https://www.coles.com.au/product/" + Uri.EscapeDataString(productName);
+        return "https://www.coles.com.au/product/" + Uri.EscapeDataString(query);
     }
 
     static public DateTime GetNextWednesday()
@@ -57,4 +227,72 @@ static class SupermarketAPI
         return today.AddDays(daysUntilWednesday);
     }
 
+    static public List<FactProduct> SearchColes(string query)
+    {
+        var API_URL = $"https://www.coles.com.au/_next/data/20260528.5-2fe21bafe8ec119eaa36ff296d6f5b95a2f6e138/en/search/products.json?q={Uri.EscapeDataString(query)}";
+        var IMAGE_BASE = "https://cdn.productimages.coles.com.au/productimages";
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+
+        var response = client.GetAsync(API_URL);
+        var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
+        var jsonResponse = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(rawResponse) ?? throw new InvalidOperationException("Failed to parse Coles search response");
+        var products = jsonResponse["pageProps"].GetProperty("searchResults").GetProperty("results").EnumerateArray();
+        var results = new List<FactProduct>();
+        foreach (var product in products)
+        {
+            if (product.GetProperty("_type").GetString() != "PRODUCT") continue; // The search results can contain non-product items like ads
+            Console.WriteLine(product);
+            var id = "";
+            var name = product.GetProperty("brand").GetString() + " " + product.GetProperty("name").GetString() + " | " + product.GetProperty("size").GetString() ?? "Unknown Product";
+            var link = "https://www.coles.com.au/product/" + product.GetProperty("id").GetInt32().ToString();
+            var image = IMAGE_BASE + product.GetProperty("imageUris").EnumerateArray().FirstOrDefault().GetProperty("uri").GetString();
+            results.Add(new FactProduct(id, name, "Coles", link, image));
+        }
+        return results;
+    }
+
+    static public List<FactProduct> SearchWoolworths(string query)
+    {
+        var cookies = GetWoolworthsCookies();
+        var API_URL = "https://www.woolworths.com.au/apis/ui/Search/products";
+        var client = new HttpClient(new HttpClientHandler { CookieContainer = cookies });
+
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+
+        var payload = new
+        {
+            EnableAdReRanking = false,
+            ExcludeSearchTypes = new[] { "UntraceableVendors" },
+            Filters = new object[] { },
+            GpBoost = 0,
+            IsHideEverydayMarketProducts = false,
+            IsHideUnavailableProducts = false,
+            IsRegisteredRewardCardPromotion = false,
+            IsSpecial = false,
+            Location = "/shop/search/products?searchTerm=milk",
+            PageNumber = 1,
+            PageSize = 36,
+            SearchTerm = query,
+            SortType = "TraderRelevance"
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        var response = client.PostAsync(API_URL, content);
+        var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
+        var jsonResponse = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(rawResponse) ?? throw new InvalidOperationException("Failed to parse Woolworths search response");
+        List<FactProduct> results = new List<FactProduct>();
+
+        foreach (var product in jsonResponse["Products"].EnumerateArray())
+        {
+            var productInfo = product.GetProperty("Products").EnumerateArray().First();
+            var id = ""; // This id is the product ID in our database. needs to be set later.
+            var name = product.GetProperty("DisplayName").GetString() ?? "Unknown Product";
+            var link = "https://www.woolworths.com.au/shop/productdetails/" + productInfo.GetProperty("Stockcode").GetInt32().ToString();
+            var image = productInfo.GetProperty("MediumImageFile").GetString()!;
+            results.Add(new FactProduct(id, name, "Woolworths", link, image));
+        }
+        return results;
+    }
 }
