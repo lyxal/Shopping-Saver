@@ -5,6 +5,7 @@ using System.Text.Json;
 static class SupermarketAPI
 {
 
+    static private string COLES_IMAGE_BASE = "https://cdn.productimages.coles.com.au/productimages";
     static private CookieContainer GetWoolworthsCookies()
     {
         var cookies = new CookieContainer(); // These are the OUTPUT cookies.
@@ -45,136 +46,7 @@ static class SupermarketAPI
 
     static public PricedProduct GetColesPriceFor(string productLink, string productID)
     {
-        var colesProductID = productLink.Split('-').Last(); // Coles product links end with the product ID, so we can extract it from the link.
-        Console.WriteLine($"Extracted Coles product ID: {colesProductID} from link: {productLink}");
-        var apiURL = "https://www.coles.com.au/api/graphql";
-
-        var payload = new
-        {
-            query = @"query GetProductsInfo($productIds: [String!]!, $brandedStoreId: BrandedId!, $shoppingMethod: ShoppingMethod, $filters: ProductsInfoFilters) {
-  productsInfo(
-    productIds: $productIds
-    brandedStoreId: $brandedStoreId
-    shoppingMethod: $shoppingMethod
-    filters: $filters
-  ) {
-    count: noOfResults
-    invalidProductIds: invalidProducts
-    results {
-      ...productsInfoFields
-    }
-  }
-}
-
-fragment productsInfoFields on InfoProduct {
-  id
-  name
-  brand
-  description
-  internalDescription
-  size
-  imageUris {
-    altText
-    type
-    uri
-  }
-  restrictions {
-    retailLimit
-    promotionalLimit
-    liquorAgeRestrictionFlag
-    tobaccoAgeRestrictionFlag
-    delivery
-    restrictedByOrganisation
-  }
-  continuity {
-    continuityPromotionId
-    creditsToRedeem
-    bonusAvailable
-    bonusTimes
-    bonusPromoName
-    bonusRoundelDisplayable
-    bonusRoundelDescription
-  }
-  collectableCampaign
-  lastUpdated
-  availability
-  availabilityType
-  availabilityStatus
-  merchandiseHeir {
-    tradeProfitCentre
-    categoryGroup
-    category
-    subCategory
-    className
-  }
-  onlineHeirs {
-    aisle
-    category
-    subCategory
-    categoryId
-    aisleId
-    subCategoryId
-  }
-  pricing {
-    now
-    was
-    saveAmount
-    saveStatement
-    unit {
-      quantity
-      ofMeasureQuantity
-      ofMeasureUnits
-      price
-      ofMeasureType
-      isWeighted
-      isIncremental
-    }
-    comparable
-    promotionType
-    onlineSpecial
-    multiBuyPromotion {
-      type
-      id
-      minQuantity
-      reward
-      unitPriceDisplay
-      instruction
-    }
-    priceDescription
-    savePercent
-    specialType
-    offerDescription
-  }
-  minGuarantee
-}",
-            variables = new
-            {
-                productIds = new[] { colesProductID },
-                brandedStoreId = "COL:7674",
-                filters = new
-                {
-                    availability = true,
-                    hasPricing = true
-                }
-            },
-            operationName = "GetProductsInfo"
-        };
-
-        var json = JsonSerializer.Serialize(payload);
-        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
-        client.DefaultRequestHeaders.Add("ocp-apim-subscription-key", "eae83861d1cd4de6bb9cd8a2cd6f041e");
-        var response = client.PostAsync(apiURL, content);
-        response.Wait();
-
-        if (!response.Result.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"Failed to fetch product info: {response.Result.StatusCode}");
-        }
-
-        var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
-        var jsonResponse = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(rawResponse);
+        var jsonResponse = ColesScraper.ExtractProductDataFor(productLink);
         var productInfo = (jsonResponse?["data"].GetProperty("productsInfo").GetProperty("results")[0]) ?? throw new InvalidOperationException("Product not found in Coles API response");
         return new PricedProduct(
             ProductID: productID,
@@ -188,15 +60,31 @@ fragment productsInfoFields on InfoProduct {
 
     static public FactProduct GetWoolworthsProductFor(string productLink, string productID)
     {
-        // Placeholder implementation
-        var productName = Uri.UnescapeDataString(productLink.AsSpan(productLink.LastIndexOf('/') + 1));
-        return new FactProduct(productID, productName, "Woolworths", productLink, "https://example.com/image.jpg");
+        var cookies = GetWoolworthsCookies();
+        var handler = new HttpClientHandler { CookieContainer = cookies };
+        var client = new HttpClient(handler);
+        var productPageResponse = client.GetAsync(productLink);
+        productPageResponse.Wait();
+        if (!productPageResponse.Result.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Failed to fetch product page: {productPageResponse.Result.StatusCode}");
+        }
+        var htmlTask = productPageResponse.Result.Content.ReadAsStringAsync();
+        htmlTask.Wait();
+        var htmlContent = htmlTask.Result;
+        var factProduct = WoolworthsScraper.ExtractFactProduct(htmlContent);
+        return factProduct with { ProductID = productID };
     }
 
     static public FactProduct GetColesProductFor(string productLink, string productID)
     {
-        var productName = Uri.UnescapeDataString(productLink.AsSpan(productLink.LastIndexOf('/') + 1));
-        return new FactProduct(productID, productName, "Coles", productLink, "https://example.com/image.jpg");
+        var jsonResponse = ColesScraper.ExtractProductDataFor(productLink);
+        var productInfo = (jsonResponse?["data"].GetProperty("productsInfo").GetProperty("results")[0]) ?? throw new InvalidOperationException("Product not found in Coles API response");
+        var id = productID;
+        var name = productInfo.GetProperty("brand").GetString() + " " + productInfo.GetProperty("name").GetString() + " | " + productInfo.GetProperty("size").GetString() ?? "Unknown Product";
+        var link = "https://www.coles.com.au/product/" + productInfo.GetProperty("id").GetInt32().ToString();
+        var image = COLES_IMAGE_BASE + productInfo.GetProperty("imageUris").EnumerateArray().FirstOrDefault().GetProperty("uri").GetString();
+        return new FactProduct(id, name, "Coles", link, image);
     }
 
     static public DateTime GetNextWednesday()
@@ -212,7 +100,6 @@ fragment productsInfoFields on InfoProduct {
     static public List<FactProduct> SearchColes(string query)
     {
         var API_URL = $"https://www.coles.com.au/_next/data/20260528.5-2fe21bafe8ec119eaa36ff296d6f5b95a2f6e138/en/search/products.json?q={Uri.EscapeDataString(query)}";
-        var IMAGE_BASE = "https://cdn.productimages.coles.com.au/productimages";
         var client = new HttpClient();
         client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
 
@@ -227,7 +114,7 @@ fragment productsInfoFields on InfoProduct {
             var id = "";
             var name = product.GetProperty("brand").GetString() + " " + product.GetProperty("name").GetString() + " | " + product.GetProperty("size").GetString() ?? "Unknown Product";
             var link = "https://www.coles.com.au/product/" + product.GetProperty("id").GetInt32().ToString();
-            var image = IMAGE_BASE + product.GetProperty("imageUris").EnumerateArray().FirstOrDefault().GetProperty("uri").GetString();
+            var image = COLES_IMAGE_BASE + product.GetProperty("imageUris").EnumerateArray().FirstOrDefault().GetProperty("uri").GetString();
             results.Add(new FactProduct(id, name, "Coles", link, image));
         }
         return results;

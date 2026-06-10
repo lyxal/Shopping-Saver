@@ -71,7 +71,7 @@ public static class WoolworthsScraper
             Name: GetString(p, "Name") ?? "Unknown Product",
             Store: "Woolworths",
             Link: GetString(p, "ProductLink") ?? "",
-            ImageLink: GetString(p, "ImageLink") ?? ""
+            ImageLink: GetString(p, "MediumImageFile") ?? ""
         );
 
         return product;

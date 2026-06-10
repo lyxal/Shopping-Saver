@@ -36,15 +36,20 @@ const localStyles = StyleSheet.create({
 
 type Props = {
   product: FactProduct;
-  key: string;
+  selected?: boolean;
 };
 
-export default function FactProductItem({ product, key }: Props) {
+export default function FactProductItem({ product, selected }: Props) {
   console.log("Rendering FactProductItem for product:", product);
   const fallbackImage = "https://placehold.co/80x80?text=No+Image";
   const [imageUri, setImageUri] = useState(product.ImageLink);
   return (
-    <View style={localStyles.container} key={key}>
+    <View
+      style={[
+        localStyles.container,
+        selected && { backgroundColor: "#e9ecef" },
+      ]}
+    >
       <Image
         source={{ uri: imageUri }}
         style={localStyles.image}
