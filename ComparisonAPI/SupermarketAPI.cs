@@ -22,6 +22,7 @@ static class SupermarketAPI
     }
     static public PricedProduct GetWoolworthsPriceFor(string productLink, string productID)
     {
+        Console.WriteLine($"Fetching Woolworths price for {productLink}...");
         var cookies = GetWoolworthsCookies(); // Need to get cookies every time because they expire.
         var handler = new HttpClientHandler { CookieContainer = cookies };
         var client = new HttpClient(handler);
@@ -48,10 +49,16 @@ static class SupermarketAPI
     {
         var jsonResponse = ColesScraper.ExtractProductDataFor(productLink);
         var productInfo = (jsonResponse?["data"].GetProperty("productsInfo").GetProperty("results")[0]) ?? throw new InvalidOperationException("Product not found in Coles API response");
+        var wasPrice = productInfo.GetProperty("pricing").GetProperty("was");
+        // Sometimes, was is `null` (i.e. not currently on sale), so we need to handle that case.
+        if (wasPrice.ValueKind == JsonValueKind.Null)
+        {
+            wasPrice = productInfo.GetProperty("pricing").GetProperty("now");
+        }
         return new PricedProduct(
             ProductID: productID,
             Store: "Coles",
-            NormalPrice: productInfo.GetProperty("pricing").GetProperty("was").GetDecimal(),
+            NormalPrice: wasPrice.GetDecimal(),
             SalePrice: productInfo.GetProperty("pricing").GetProperty("now").GetDecimal(),
             LastChecked: DateTime.UtcNow,
             ProductLink: productLink
@@ -73,7 +80,7 @@ static class SupermarketAPI
         htmlTask.Wait();
         var htmlContent = htmlTask.Result;
         var factProduct = WoolworthsScraper.ExtractFactProduct(htmlContent);
-        return factProduct with { ProductID = productID };
+        return factProduct with { ProductID = productID, Link = productLink };
     }
 
     static public FactProduct GetColesProductFor(string productLink, string productID)

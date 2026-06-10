@@ -108,7 +108,8 @@ app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest reque
         {
             Success = false,
             Message = "Multiple or no products found for the given Woolworths product name. Please refine your search.",
-            ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
+            ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink }),
+            WoolworthsLink = wLink // Include the original Woolworths link in the response to help the user identify the correct product.
         });
         colesProduct = factProductsDb.GetOrFetchFromColesLink(potentialColesProducts.First().Link);
     }
@@ -122,18 +123,22 @@ app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest reque
         {
             Success = false,
             Message = "Multiple or no products found for the given Coles product name. Please refine your search.",
-            WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
+            WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink }),
+            ColesLink = cLink // Include the original Coles link in the response to help the user identify the correct product.
         });
         woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(potentialWoolworthsProducts.First().Link);
+        Console.WriteLine($"Woolworths product found from Coles link: {woolworthsProduct.Name} ({woolworthsProduct.Link})");
     }
     else
     {
         return Results.BadRequest("No product links provided.");
     }
 
+    Console.WriteLine($"Woolworths product: {woolworthsProduct.Name} ({woolworthsProduct.Link}), Coles product: {colesProduct.Name} ({colesProduct.Link})");
+
     listsDb.AddComparisonToList(request.UserID, request.ListID, colesProduct, woolworthsProduct);
 
-    return Results.Ok(new { Success = true, Message = "Product added successfully." });
+    return Results.Ok(new { Success = true, Message = "Product added successfully.", ColesLink = colesProduct.Link, WoolworthsLink = woolworthsProduct.Link });
 });
 
 app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
@@ -156,7 +161,9 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
                 Success = false,
                 Message = "Multiple or no products found for the given names. Please refine your search.",
                 WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink }),
-                ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
+                ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink }),
+                ColesLink = potentialColesProducts.Count == 1 ? potentialColesProducts.First().Link : null,
+                WoolworthsLink = potentialWoolworthsProducts.Count == 1 ? potentialWoolworthsProducts.First().Link : null
             }
         );
     }
@@ -167,7 +174,7 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
 
     listsDb.AddComparisonToList(request.UserID, request.ListID, colesProduct, woolworthsProduct);
 
-    return Results.Ok(new { Success = true, Message = "Product added successfully." });
+    return Results.Ok(new { Success = true, Message = "Product added successfully.", ColesLink = colesProduct.Link, WoolworthsLink = woolworthsProduct.Link });
 });
 
 app.MapPost("/removeProduct", async (RemoveProductRequest request) =>
@@ -350,6 +357,18 @@ app.Use(async (context, next) =>
         Console.WriteLine($"Bad request: {ex.Message}");
         context.Response.StatusCode = 400;
         await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        Console.WriteLine($"Invalid operation: {ex.Message}");
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Internal server error: {ex.Message}");
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
     }
 });
 app.Run();

@@ -147,7 +147,8 @@ public class FactProductsDatabase
 
     public FactProduct GetOrFetchFromWoolworthsLink(string productLink)
     {
-        var filter = Builders<BsonDocument>.Filter.Eq("link", productLink);
+        Console.WriteLine($"Fetching product for Woolworths link: {productLink}");
+        var filter = Builders<BsonDocument>.Filter.Eq("Link", productLink);
         var productDoc = _productsCollection.Find(filter).FirstOrDefault();
         if (productDoc != null)
         {
