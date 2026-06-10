@@ -1,47 +1,35 @@
-import { ApiConfig } from "./types";
+import { ApiConfig, JSONValue } from "./types";
 
 export const DEFAULT_API_BASE_URL = "http://localhost:5000";
 
+export async function getAPI<T>(
+  path: string,
+  params: Record<string, string | number | boolean | null | undefined> = {}
+): Promise<T> {
+  const url = new URL(path, DEFAULT_API_BASE_URL);
 
-export function getApiConfig(): ApiConfig {
-  const baseUrl =
-    process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL;
-  return { baseUrl: baseUrl.replace(/\/+$/, "") };
-}
-
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const { baseUrl } = getApiConfig();
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      url.searchParams.append(key, String(value));
+    }
   });
 
-  const text = await response.text();
-  const payload = text ? safeJsonParse(text) : null;
+  console.log(`Making GET request to: ${url.toString()}`);
 
-  if (!response.ok) {
-    const message =
-      (payload && typeof payload === "object" && "error" in payload
-        ? String((payload as { error: unknown }).error)
-        : null) ??
-      (payload && typeof payload === "object" && "title" in payload
-        ? String((payload as { title: unknown }).title)
-        : null) ??
-      `Request failed with status ${response.status}`;
-    throw new Error(message);
-  }
-
-  return payload as T;
+  const response = await fetch(url.toString());
+  const result = await response.json();
+  return result as T;
 }
 
-
-export function safeJsonParse(value: string) {
-  try {
-    return JSON.parse(value) as unknown;
-  } catch {
-    return value;
-  }
+export async function postAPI<T>(path: string, body: JSONValue): Promise<T> {
+  const url = new URL(path, DEFAULT_API_BASE_URL);
+  const response = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const result = await response.json();
+  return result as T;
 }

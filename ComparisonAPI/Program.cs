@@ -108,7 +108,7 @@ app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest reque
         {
             Success = false,
             Message = "Multiple or no products found for the given Woolworths product name. Please refine your search.",
-            ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link })
+            ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
         });
         colesProduct = factProductsDb.GetOrFetchFromColesLink(potentialColesProducts.First().Link);
     }
@@ -122,7 +122,7 @@ app.MapPost("/addProductFromLink", async ([FromBody] AddProductLinkRequest reque
         {
             Success = false,
             Message = "Multiple or no products found for the given Coles product name. Please refine your search.",
-            WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link })
+            WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
         });
         woolworthsProduct = factProductsDb.GetOrFetchFromWoolworthsLink(potentialWoolworthsProducts.First().Link);
     }
@@ -159,8 +159,8 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
                 {
                     Success = false,
                     Message = "Multiple or no products found for the given names. Please refine your search.",
-                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link }),
-                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link })
+                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink }),
+                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
                 }
             );
         }
@@ -179,7 +179,7 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
                 {
                     Success = false,
                     Message = "Multiple or no products found for the given Woolworths name. Please refine your search.",
-                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link })
+                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
                 }
             );
         }
@@ -192,7 +192,7 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
                 {
                     Success = false,
                     Message = "Multiple or no products found for the given Coles name. Please refine your search.",
-                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link })
+                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
                 }
             );
         }
@@ -208,7 +208,7 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
                 {
                     Success = false,
                     Message = "Multiple or no products found for the given Coles name. Please refine your search.",
-                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link })
+                    ColesOptions = potentialColesProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
                 }
             );
         }
@@ -221,7 +221,7 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
                 {
                     Success = false,
                     Message = "Multiple or no products found for the given Woolworths name. Please refine your search.",
-                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link })
+                    WoolworthsOptions = potentialWoolworthsProducts.Select(p => new { p.Name, p.Link, p.ImageLink })
                 }
             );
         }
@@ -240,7 +240,7 @@ app.MapPost("/addProductFromName", async (AddProductNameRequest request) =>
 app.MapPost("/removeProduct", async (RemoveProductRequest request) =>
 {
     listsDb.RemoveComparisonFromList(request.UserID, request.ListID, request.ProductID);
-    return Results.Ok(new { Message = "Product removed successfully." });
+    return Results.Ok(new { Success = true, Message = "Product removed successfully." });
 });
 
 app.MapGet("/getLists/{userID}", async (string userID) =>

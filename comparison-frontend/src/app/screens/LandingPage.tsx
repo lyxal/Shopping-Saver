@@ -7,9 +7,10 @@ import {
   TextInput,
   Pressable,
 } from "react-native";
-import { apiFetch } from "../lib/api";
+import { postAPI } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
+import { SigninResponse } from "../lib/types";
 const styles = StyleSheet.create({
   main: {
     flex: 1,
@@ -36,14 +37,14 @@ export default function LandingPage() {
 
   const handleGetStarted = async () => {
     const trimmedEmail = email.trim();
-    const payload = await apiFetch<{ UserID: string }>("/signin", {
-      method: "POST",
-      body: JSON.stringify({ Email: trimmedEmail }),
+    const payload = await postAPI<SigninResponse>("/signin", {
+      Email: trimmedEmail,
     });
     setEmail("");
-    alert(`Signed in with UserID: ${payload.UserID}`);
     setUserID(payload.UserID);
-    router.push("/screens/ProductLists");
+    requestAnimationFrame(() => {
+      router.push("/screens/ProductLists");
+    });
   };
 
   return (

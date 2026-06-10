@@ -175,7 +175,6 @@ fragment productsInfoFields on InfoProduct {
 
         var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
         var jsonResponse = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(rawResponse);
-        Console.WriteLine($"Raw Coles API response: {rawResponse}");
         var productInfo = (jsonResponse?["data"].GetProperty("productsInfo").GetProperty("results")[0]) ?? throw new InvalidOperationException("Product not found in Coles API response");
         return new PricedProduct(
             ProductID: productID,
@@ -225,7 +224,6 @@ fragment productsInfoFields on InfoProduct {
         foreach (var product in products)
         {
             if (product.GetProperty("_type").GetString() != "PRODUCT") continue; // The search results can contain non-product items like ads
-            Console.WriteLine(product);
             var id = "";
             var name = product.GetProperty("brand").GetString() + " " + product.GetProperty("name").GetString() + " | " + product.GetProperty("size").GetString() ?? "Unknown Product";
             var link = "https://www.coles.com.au/product/" + product.GetProperty("id").GetInt32().ToString();
