@@ -1,24 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { ProductListSummary } from "../lib/types";
-
-const styles = StyleSheet.create({
-  container: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 16,
-    flexGrow: 1,
-  },
-  listName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
-  extraInfo: {
-    fontSize: 14,
-    color: "#666",
-  },
-});
+import { styles as g, colors, spacing } from "../styles/global";
 
 type Props = {
   list: ProductListSummary;
@@ -27,17 +9,32 @@ type Props = {
 
 export default function ListSummary({ list, onPress }: Props) {
   return (
-    <Pressable onPress={() => onPress(list.ListID, list.ListName)}>
-      <View style={styles.container}>
-        <Text style={styles.listName}>{list.ListName}</Text>
-        <Text style={styles.extraInfo}>{list.ProductCount} product(s)</Text>
-        <Text style={styles.extraInfo}>
-          Last updated: {new Date(list.LastEdited).toLocaleString()}
+    <Pressable
+      onPress={() => onPress(list.ListID, list.ListName)}
+      style={({ pressed }) => [g.cardDark, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`${list.ListName}, ${list.ProductCount} products`}
+    >
+      <Text style={g.textSubheading}>{list.ListName}</Text>
+      <View style={styles.meta}>
+        <Text style={g.textCaption}>
+          {list.ProductCount} product{list.ProductCount === 1 ? "" : "s"}
         </Text>
-        <Text style={styles.extraInfo}>
-          Created at: {new Date(list.CreatedAt).toLocaleString()}
+        <Text style={g.textCaption}>
+          Updated {new Date(list.LastEdited).toLocaleString()}
         </Text>
       </View>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  pressed: {
+    backgroundColor: colors.surfaceHigh,
+  },
+
+  meta: {
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+});

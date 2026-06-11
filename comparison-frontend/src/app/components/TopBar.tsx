@@ -1,25 +1,21 @@
 import { Text, View, StyleSheet } from "react-native";
-
-const styles = StyleSheet.create({
-  logo: {
-    color: "#ffffff",
-    fontFamily: "Arial",
-    fontSize: 24,
-    fontWeight: "bold",
-    flex: 1,
-  },
-  container: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    paddingTop: 20,
-    paddingLeft: 20,
-  },
-});
+import { styles as g, colors, spacing } from "../styles/global";
 
 export default function TopBar() {
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>Open</Text>
+      <Text style={g.textHeading}>Open</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+});

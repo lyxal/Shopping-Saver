@@ -3,8 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import {
   Text,
   View,
-  StyleSheet,
-  Image,
   TextInput,
   Pressable,
 } from "react-native";
@@ -12,18 +10,7 @@ import { getAPI, postAPI } from "../lib/api";
 import { ProductListSummary } from "../lib/types";
 import { Redirect, router } from "expo-router";
 import ListSummary from "../components/ListSummary";
-import { styles } from "../styles/global";
-
-const localStyles = StyleSheet.create({
-  textinput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 10,
-    backgroundColor: "#ffffff",
-  },
-});
+import { styles as g, colors } from "../styles/global";
 
 export default function ProductLists() {
   const auth = useAuth();
@@ -70,11 +57,12 @@ export default function ProductLists() {
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [newListNameFocused, setNewListNameFocused] = useState(false);
 
   return (
     <>
-      <View style={styles.main}>
-        <Text style={styles.text}>Your Product Lists</Text>
+      <View style={g.screenContainer}>
+        <Text style={g.textHeading}>Your Product Lists</Text>
         {lists.map((list) => (
           <ListSummary
             key={list.ListID}
@@ -82,28 +70,26 @@ export default function ProductLists() {
             onPress={handleListPress}
           />
         ))}
-        <Pressable onPress={() => setShowCreateForm(true)}>
-          <Text style={styles.text}>Create New List</Text>
+        <Pressable
+          onPress={() => setShowCreateForm(true)}
+          style={g.buttonPrimary}
+        >
+          <Text style={g.buttonPrimaryText}>Create New List</Text>
         </Pressable>
         {showCreateForm && (
-          <View style={styles.modal}>
+          <View style={g.modal}>
+            <Text style={g.inputLabel}>List name</Text>
             <TextInput
               placeholder="Enter list name"
+              placeholderTextColor={colors.textSecondary}
               value={newListName}
               onChangeText={setNewListName}
-              style={localStyles.textinput}
+              onFocus={() => setNewListNameFocused(true)}
+              onBlur={() => setNewListNameFocused(false)}
+              style={[g.input, newListNameFocused && g.inputFocused]}
             />
-            <Pressable
-              onPress={handleCreateList}
-              style={{
-                backgroundColor: "#007bff",
-                padding: 10,
-                borderRadius: 5,
-              }}
-            >
-              <Text style={{ color: "#ffffff", fontWeight: "bold" }}>
-                Create
-              </Text>
+            <Pressable onPress={handleCreateList} style={g.buttonPrimary}>
+              <Text style={g.buttonPrimaryText}>Create</Text>
             </Pressable>
           </View>
         )}

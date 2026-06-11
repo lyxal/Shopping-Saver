@@ -1,38 +1,13 @@
-import { View, Pressable, Linking } from "react-native";
+import { View, Pressable, Linking, StyleSheet, Image, Text } from "react-native";
 import { FactProduct } from "../lib/types";
-import { StyleSheet } from "react-native";
-import { Image, Text } from "react-native";
-import { styles } from "../styles/global";
+import {
+  styles as g,
+  colors,
+  spacing,
+  typography,
+  radii,
+} from "../styles/global";
 import { useState } from "react";
-const localStyles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
-  },
-  image: {
-    width: 80,
-    height: 80,
-    marginRight: 10,
-  },
-  infoContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  store: {
-    fontSize: 14,
-    color: "#666",
-  },
-  link: {
-    fontSize: 14,
-    color: "#007bff",
-  },
-});
 
 type Props = {
   product: FactProduct;
@@ -46,22 +21,62 @@ export default function FactProductItem({ product, selected }: Props) {
   return (
     <View
       style={[
-        localStyles.container,
-        selected && { backgroundColor: "#e9ecef" },
+        styles.container,
+        selected && styles.selected,
       ]}
     >
       <Image
         source={{ uri: imageUri }}
-        style={localStyles.image}
+        style={styles.image}
         onError={() => setImageUri(fallbackImage)}
       />
-      <View style={localStyles.infoContainer}>
-        <Text style={styles.text}>{product.Name}</Text>
-        <Text style={styles.text}>{product.Store}</Text>
+      <View style={styles.infoContainer}>
+        <Text style={g.textBody}>{product.Name}</Text>
+        <Text style={g.textCaption}>{product.Store}</Text>
         <Pressable onPress={() => Linking.openURL(product.Link)}>
-          <Text style={localStyles.link}>View Product</Text>
+          <Text style={styles.link}>View Product</Text>
         </Pressable>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: "row",
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+    gap: spacing.md,
+  },
+
+  selected: {
+    backgroundColor: colors.accentSubtle,
+    borderColor: colors.accent,
+  },
+
+  image: {
+    width: 80,
+    height: 80,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceHigh,
+  },
+
+  infoContainer: {
+    flex: 1,
+    justifyContent: "center",
+    gap: spacing.xs,
+  },
+
+  link: {
+    color: colors.accent,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.sizeSm,
+    fontWeight: typography.weightMedium,
+    minHeight: 44,
+    textAlignVertical: "center",
+  },
+});

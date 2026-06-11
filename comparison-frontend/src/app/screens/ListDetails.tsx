@@ -11,7 +11,12 @@ import {
 } from "react-native";
 import { getAPI, postAPI } from "../lib/api";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { styles } from "../styles/global";
+import {
+  styles as g,
+  colors,
+  spacing,
+  typography,
+} from "../styles/global";
 import FactProductPairItem from "../components/FactProductPairItem";
 import FactProductItem from "../components/FactProductItem";
 
@@ -47,6 +52,7 @@ export default function ListDetails() {
   }, [listID, userID]);
 
   const [showAddItemForm, setShowAddItemForm] = useState(false);
+  const [itemToAddFocused, setItemToAddFocused] = useState(false);
   const [itemToAdd, setItemToAdd] = useState<{
     additionType: "link" | "name";
     value: string;
@@ -179,28 +185,24 @@ export default function ListDetails() {
 
   return (
     <>
-      <ScrollView style={styles.main}>
+      <ScrollView
+        style={g.screenContainer}
+        contentContainerStyle={styles.content}
+      >
         <Pressable
           onPress={() => router.push("/screens/ProductLists")}
-          style={{ marginBottom: 20 }}
+          style={styles.backButton}
         >
-          <Text style={styles.text}>{`< Back to Lists`}</Text>
+          <Text style={styles.linkText}>{`< Back to Lists`}</Text>
         </Pressable>
-        <Text style={styles.text}>List: {listName}</Text>
+        <Text style={g.textHeading}>List: {listName}</Text>
         <Pressable
           onPress={handleCompareRequest}
-          style={{
-            backgroundColor: "#007bff",
-            padding: 10,
-            borderRadius: 5,
-            marginTop: 10,
-          }}
+          style={g.buttonPrimary}
         >
-          <Text style={{ color: "#ffffff", fontWeight: "bold" }}>
-            Compare Products
-          </Text>
+          <Text style={g.buttonPrimaryText}>Compare Products</Text>
         </Pressable>
-        <Text style={styles.text}>Products:</Text>
+        <Text style={g.textLabel}>Products</Text>
         {details.map((pair) => (
           <FactProductPairItem
             key={`${pair.Coles.ProductID}-${pair.Woolworths.ProductID}`}
@@ -209,50 +211,43 @@ export default function ListDetails() {
         ))}
         <Pressable
           onPress={() => setShowAddItemForm(true)}
-          style={{ marginTop: 20 }}
+          style={g.buttonOutlined}
         >
-          <Text style={styles.text}>Add Item</Text>
+          <Text style={g.buttonOutlinedText}>Add Item</Text>
         </Pressable>
         {showAddItemForm && (
-          <View style={styles.modal}>
-            <Text style={styles.text}>Add Product</Text>
+          <View style={g.modal}>
+            <Text style={g.textSubheading}>Add Product</Text>
+            <Text style={g.inputLabel}>Product name or link</Text>
             <TextInput
               placeholder="Product Name/Product Link"
-              style={styles.input}
+              placeholderTextColor={colors.textSecondary}
+              style={[g.input, itemToAddFocused && g.inputFocused]}
               value={itemToAdd.value}
+              onFocus={() => setItemToAddFocused(true)}
+              onBlur={() => setItemToAddFocused(false)}
               onChangeText={(text) => handleItemToAddChange(text)}
             />
             <Pressable
               onPress={handleAddItem}
-              style={{
-                backgroundColor: "#007bff",
-                padding: 10,
-                borderRadius: 5,
-                marginTop: 10,
-              }}
+              style={g.buttonPrimary}
               disabled={disableSearchButton}
             >
-              <Text style={{ color: "#ffffff", fontWeight: "bold" }}>
-                Search
-              </Text>
+              <Text style={g.buttonPrimaryText}>Search</Text>
             </Pressable>
           </View>
         )}
         {showSearchResults && (
-          <View style={{ marginTop: 20 }}>
-            <Text style={styles.text}>Search Results:</Text>
-            <View style={{ flexDirection: "row" }}>
+          <View style={styles.searchResults}>
+            <Text style={g.textLabel}>Search Results</Text>
+            <View style={styles.resultColumns}>
               {colesOptions.length > 0 && (
-                <ScrollView style={{ maxHeight: 200, flex: 1 }}>
-                  <Text style={styles.text}>Coles:</Text>
+                <ScrollView style={styles.resultList}>
+                  <Text style={g.textSubheading}>Coles</Text>
                   {colesOptions.map((product) => (
                     <View
                       key={`coles-${product.Name}`}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 10,
-                      }}
+                      style={styles.optionRow}
                     >
                       <FactProductItem
                         product={product}
@@ -261,25 +256,19 @@ export default function ListDetails() {
                       <Pressable
                         onPress={() => setSelectedColesProduct(product.Link)}
                       >
-                        <Text style={{ color: "#007bff" }}>
-                          Choose This Product
-                        </Text>
+                        <Text style={styles.linkText}>Choose This Product</Text>
                       </Pressable>
                     </View>
                   ))}
                 </ScrollView>
               )}
               {woolworthsOptions.length > 0 && (
-                <ScrollView style={{ maxHeight: 200, flex: 1 }}>
-                  <Text style={styles.text}>Woolworths:</Text>
+                <ScrollView style={styles.resultList}>
+                  <Text style={g.textSubheading}>Woolworths</Text>
                   {woolworthsOptions.map((product) => (
                     <View
                       key={`woolworths-${product.Name}`}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 10,
-                      }}
+                      style={styles.optionRow}
                     >
                       <FactProductItem
                         product={product}
@@ -290,9 +279,7 @@ export default function ListDetails() {
                           setSelectedWoolworthsProduct(product.Link)
                         }
                       >
-                        <Text style={{ color: "#007bff" }}>
-                          Choose This Product
-                        </Text>
+                        <Text style={styles.linkText}>Choose This Product</Text>
                       </Pressable>
                     </View>
                   ))}
@@ -300,10 +287,8 @@ export default function ListDetails() {
               )}
             </View>
             {!!selectedColesLink && !!selectedWoolworthsLink && (
-              <Pressable onPress={handleAddItem}>
-                <Text style={{ color: "#007bff" }}>
-                  Submit Selected Products
-                </Text>
+              <Pressable onPress={handleAddItem} style={g.buttonPrimary}>
+                <Text style={g.buttonPrimaryText}>Submit Selected Products</Text>
               </Pressable>
             )}
           </View>
@@ -312,3 +297,47 @@ export default function ListDetails() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+
+  backButton: {
+    alignSelf: "flex-start",
+    minHeight: 44,
+    justifyContent: "center",
+  },
+
+  linkText: {
+    color: colors.accent,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.sizeSm,
+    fontWeight: typography.weightMedium,
+    minHeight: 44,
+    textAlignVertical: "center",
+  },
+
+  searchResults: {
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+
+  resultColumns: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+
+  resultList: {
+    flex: 1,
+    maxHeight: 200,
+  },
+
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+});
