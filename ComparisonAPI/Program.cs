@@ -6,56 +6,45 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("FrontendOnly", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
 
-var config = new ConfigurationBuilder()
-    .AddUserSecrets<Program>()
-    .Build();
-
 BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc));
 
-var mongoConnectionString = config["MongoDB:ConnectionString"];
+var mongoConnectionString = builder.Configuration["MongoDB:ConnectionString"];
 
 Console.WriteLine($"Mongo config present: {!string.IsNullOrWhiteSpace(mongoConnectionString)}");
+
+if (string.IsNullOrWhiteSpace(mongoConnectionString))
+{
+    throw new InvalidOperationException("MongoDB:ConnectionString is not configured.");
+}
 
 var settings = MongoClientSettings.FromConnectionString(mongoConnectionString);
 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
 
 var client = new MongoClient(settings);
-
-// Ping the database to ensure a connection is established before handling requests.
-try
-{
-    client.GetDatabase("admin").RunCommand<BsonDocument>(new BsonDocument { { "ping", 1 } });
-    Console.WriteLine("Successfully connected to MongoDB.");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Error connecting to MongoDB: {ex.Message}");
-    throw; // Re-throw the exception to prevent the application from starting without a database connection.
-}
-
 var usersDb = new UsersDatabase(client);
 var listsDb = new ListsDatabase(client);
 var factProductsDb = new FactProductsDatabase(client);
 var pricedProductsDb = new PricedProductsDatabase(client);
 
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.PropertyNamingPolicy = null;
-});
 
 var app = builder.Build();
-app.UseCors("AllowAll");
+app.UseCors("FrontendOnly");
 app.UseHttpsRedirection();
+
 
 app.MapGet("/", () => "I think you meant to call an API route.");
 
