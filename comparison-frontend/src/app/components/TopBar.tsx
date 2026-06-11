@@ -1,11 +1,10 @@
 import { Text, View, StyleSheet, Pressable } from "react-native";
 import { styles as g, colors, spacing } from "../styles/global";
-import { Redirect } from "expo-router";
+import { router } from "expo-router";
 
 export default function TopBar() {
   const handleOpen = () => {
-    // Just redirect to landing page
-    return <Redirect href="/" />;
+    router.push("/");
   };
 
   return (
