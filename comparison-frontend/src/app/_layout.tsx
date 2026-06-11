@@ -27,6 +27,7 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
+          title: "Shopping Saver",
         }}
       />
     </AuthProvider>
