@@ -44,6 +44,7 @@ var pricedProductsDb = new PricedProductsDatabase(client);
 builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.PropertyNamingPolicy = null; });
 
 var app = builder.Build();
+SupermarketAPI.ConfigureProductionMocks(app.Environment.IsProduction());
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
