@@ -19,11 +19,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      PROJECT_DIR: comparison-frontend
       EXPO_BASE_URL: /${{ github.event.repository.name }}
       EXPO_PUBLIC_API_BASE_URL: https://shopsave-f0fub9eee4dhazbr.japaneast-01.azurewebsites.net
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Change to project directory
+        run: cd ${{ env.PROJECT_DIR }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
