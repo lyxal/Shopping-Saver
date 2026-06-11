@@ -157,6 +157,7 @@ static class SupermarketAPI
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
         var response = client.PostAsync(API_URL, content);
         var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
+        Console.WriteLine($"Raw Woolworths search response: {rawResponse}");
         var jsonResponse = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(rawResponse) ?? throw new InvalidOperationException("Failed to parse Woolworths search response");
         List<FactProduct> results = new List<FactProduct>();
 
