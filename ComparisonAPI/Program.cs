@@ -26,9 +26,13 @@ var config = new ConfigurationBuilder()
 
 BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc));
 
-var connectionUri = config["MongoDB:ConnectionString"];
+var mongoConnectionString =
+    builder.Configuration["MongoDB:ConnectionString"]
+    ?? builder.Configuration["MongoDB__ConnectionString"];
 
-var settings = MongoClientSettings.FromConnectionString(connectionUri);
+Console.WriteLine($"Mongo config present: {!string.IsNullOrWhiteSpace(mongoConnectionString)}");
+
+var settings = MongoClientSettings.FromConnectionString(mongoConnectionString);
 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
 
 var client = new MongoClient(settings);
