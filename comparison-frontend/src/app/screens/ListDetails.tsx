@@ -414,9 +414,9 @@ export default function ListDetails() {
         </View>
       </ScrollView>
 
-      {(showSearchResults || canCompare) && (
+      {(showBackToTop || showSearchResults || canCompare) && (
         <View style={styles.floatingActionBar}>
-          {showSearchResults && showBackToTop && (
+          {showBackToTop && (
             <Pressable
               onPress={handleBackToTop}
               style={styles.backToTopButton}
@@ -729,11 +729,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: spacing.lg,
+    bottom: 0,
     zIndex: 2,
     alignItems: "center",
     gap: spacing.sm,
+    backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
 
   backToTopButton: {
