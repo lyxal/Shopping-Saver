@@ -24,8 +24,7 @@ export default function ListSummary({ list, onPress }: Props) {
     const now = new Date();
     const diffInDays =
       (now.getTime() - lastEditedDate.getTime()) / (1000 * 3600 * 24);
-    //setShowPotentialSavings(diffInDays > 7);
-    setShowPotentialSavings(diffInDays > 0); // For testing, show the icon if last edited is in the past
+    setShowPotentialSavings(diffInDays > 7);
   }, [list.LastEdited]);
   return (
     <Pressable
