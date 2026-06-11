@@ -39,7 +39,11 @@ export default function LandingPage() {
   return (
     <View style={[g.screenContainerCentered, { marginTop: -spacing.md }]}>
       <Text style={g.textHeading}>Your Grocery Shopping</Text>
-      <Text style={g.textHeadingAmber}>Enhancer</Text>
+      <Text
+        style={[g.textHeadingAmber, { fontSize: g.textHeading.fontSize * 1.8 }]}
+      >
+        Enhancer
+      </Text>
 
       <Image
         source={require("../../../assets/images/PlanetSplash.png")}
