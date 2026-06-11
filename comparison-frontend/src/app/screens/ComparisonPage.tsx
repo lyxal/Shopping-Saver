@@ -73,8 +73,10 @@ export default function ComparisonPage() {
       comparisonData.TotalNormalPrice.Woolworths +
       comparisonData.TotalNormalPrice.Coles;
     const percentSaved = totalNormal > 0 ? (totalSaved / totalNormal) * 100 : 0;
+    const overallStore = totalCheaper < 0.01 ? "Tie" : comparisonData.CheaperStore;
 
     return {
+      overallStore,
       totalCheaper,
       percentCheaper,
       totalSaved,
@@ -153,7 +155,9 @@ export default function ComparisonPage() {
                   style={styles.backButton}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.backButtonText}>Back to List</Text>
+                  <Text style={styles.backButtonText}>
+                    Back to {currentListName}
+                  </Text>
                 </Pressable>
               )}
               {!loading && (
@@ -189,7 +193,7 @@ export default function ComparisonPage() {
                 <View style={styles.summaryHeader}>
                   <Text style={g.textLabel}>Overall Cheaper Store</Text>
                   <Text style={styles.cheaperStore}>
-                    {comparisonData.CheaperStore}
+                    {comparisonSummary?.overallStore ?? comparisonData.CheaperStore}
                   </Text>
                   {!!comparisonSummary && (
                     <View style={styles.summaryStats}>
@@ -219,7 +223,8 @@ export default function ComparisonPage() {
                       Normal ${comparisonData.TotalNormalPrice.Coles.toFixed(2)}
                     </Text>
                     <Text style={styles.savingsText}>
-                      Savings ${comparisonData.TotalSavings.Coles.toFixed(2)}
+                      Savings at Coles $
+                      {comparisonData.TotalSavings.Coles.toFixed(2)}
                     </Text>
                   </View>
 
@@ -233,7 +238,7 @@ export default function ComparisonPage() {
                       {comparisonData.TotalNormalPrice.Woolworths.toFixed(2)}
                     </Text>
                     <Text style={styles.savingsText}>
-                      Savings $
+                      Savings at Woolworths $
                       {comparisonData.TotalSavings.Woolworths.toFixed(2)}
                     </Text>
                   </View>
@@ -265,6 +270,7 @@ export default function ComparisonPage() {
                   const percentageDifference = Math.abs(
                     comp.PercentageDifference,
                   );
+                  const isTie = priceDifference < 0.01;
 
                   return (
                     <View key={index} style={styles.comparisonCard}>
@@ -272,7 +278,7 @@ export default function ComparisonPage() {
                         <View
                           style={[
                             styles.productPanel,
-                            colesWins && styles.winningProduct,
+                            (colesWins || isTie) && styles.winningProduct,
                           ]}
                         >
                           <Image
@@ -282,10 +288,10 @@ export default function ComparisonPage() {
                             style={styles.productImage}
                           />
                           <View style={styles.productMeta}>
-                            {colesWins && (
+                            {(colesWins || isTie) && (
                               <View style={styles.winnerBadge}>
                                 <Text style={styles.winnerBadgeText}>
-                                  Cheapest
+                                  {isTie ? "Tie" : "Cheapest"}
                                 </Text>
                               </View>
                             )}
@@ -313,7 +319,7 @@ export default function ComparisonPage() {
                         <View
                           style={[
                             styles.productPanel,
-                            woolworthsWins && styles.winningProduct,
+                            (woolworthsWins || isTie) && styles.winningProduct,
                           ]}
                         >
                           <Image
@@ -325,10 +331,10 @@ export default function ComparisonPage() {
                             style={styles.productImage}
                           />
                           <View style={styles.productMeta}>
-                            {woolworthsWins && (
+                            {(woolworthsWins || isTie) && (
                               <View style={styles.winnerBadge}>
                                 <Text style={styles.winnerBadgeText}>
-                                  Cheapest
+                                  {isTie ? "Tie" : "Cheapest"}
                                 </Text>
                               </View>
                             )}
@@ -357,13 +363,24 @@ export default function ComparisonPage() {
                       </View>
 
                       <View style={styles.resultRow}>
-                        <Text style={styles.savingsText}>
-                          Difference ${priceDifference.toFixed(2)}
-                        </Text>
-                        <Text style={g.textCaption}>
-                          {percentageDifference.toFixed(2)}% cheaper at{" "}
-                          {comp.CheaperStore}
-                        </Text>
+                        {isTie ? (
+                          <>
+                            <Text style={styles.savingsText}>Price tie</Text>
+                            <Text style={g.textCaption}>
+                              Both stores have the same price.
+                            </Text>
+                          </>
+                        ) : (
+                          <>
+                            <Text style={styles.savingsText}>
+                              Difference ${priceDifference.toFixed(2)}
+                            </Text>
+                            <Text style={g.textCaption}>
+                              {percentageDifference.toFixed(2)}% cheaper at{" "}
+                              {comp.CheaperStore}
+                            </Text>
+                          </>
+                        )}
                       </View>
                     </View>
                   );

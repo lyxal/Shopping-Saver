@@ -1,12 +1,8 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
-
-
-HashSet<string> SupportedStores = ["Woolworths", "Coles"];
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,9 +22,7 @@ var config = new ConfigurationBuilder()
 
 BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc));
 
-var mongoConnectionString =
-    builder.Configuration["MongoDB:ConnectionString"]
-    ?? builder.Configuration["MongoDB__ConnectionString"];
+var mongoConnectionString = config["MongoDB:ConnectionString"];
 
 Console.WriteLine($"Mongo config present: {!string.IsNullOrWhiteSpace(mongoConnectionString)}");
 
@@ -313,34 +307,6 @@ app.MapPost("/compare", async (CompareRequest request) =>
         CheaperStore = totalSalePrice["Woolworths"] < totalSalePrice["Coles"] ? "Woolworths" : "Coles"
     });
 
-});
-
-app.MapPost("/testScrapeW", async (JsonElement body) =>
-{
-    var link = body.GetProperty("link").GetString()!;
-    var price = SupermarketAPI.GetWoolworthsPriceFor(link, "test");
-    return Results.Ok(price);
-});
-
-app.MapPost("/testScrapeC", async (JsonElement body) =>
-{
-    var link = body.GetProperty("link").GetString()!;
-    var price = SupermarketAPI.GetColesPriceFor(link, "test");
-    return Results.Ok(price);
-});
-
-app.MapPost("/testSearchC", async (JsonElement body) =>
-{
-    var query = body.GetProperty("query").GetString()!;
-    var results = SupermarketAPI.SearchColes(query);
-    return Results.Ok(new { Products = results });
-});
-
-app.MapPost("/testSearchW", async (JsonElement body) =>
-{
-    var query = body.GetProperty("query").GetString()!;
-    var results = SupermarketAPI.SearchWoolworths(query);
-    return Results.Ok(new { Products = results });
 });
 
 

@@ -25,6 +25,69 @@ import FactProductPairItem from "../components/FactProductPairItem";
 import FactProductItem from "../components/FactProductItem";
 import TopBar from "../components/TopBar";
 
+const fuzzyStopWords = new Set([
+  "coles",
+  "woolworths",
+  "woolworth",
+  "fresh",
+  "brand",
+  "the",
+  "and",
+  "with",
+  "from",
+]);
+
+const getProductTokens = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token.length > 1 && !fuzzyStopWords.has(token));
+
+const getProductMatchScore = (sourceName: string, candidateName: string) => {
+  const sourceTokens = new Set(getProductTokens(sourceName));
+  const candidateTokens = new Set(getProductTokens(candidateName));
+
+  if (sourceTokens.size === 0 || candidateTokens.size === 0) return 0;
+
+  let shared = 0;
+  sourceTokens.forEach((token) => {
+    if (candidateTokens.has(token)) {
+      shared += 1;
+    }
+  });
+
+  const overlap =
+    (2 * shared) / (sourceTokens.size + candidateTokens.size);
+  const sourceNormalized = Array.from(sourceTokens).join(" ");
+  const candidateNormalized = Array.from(candidateTokens).join(" ");
+  const containsName =
+    sourceNormalized.includes(candidateNormalized) ||
+    candidateNormalized.includes(sourceNormalized);
+
+  return containsName ? Math.max(overlap, 0.82) : overlap;
+};
+
+const findBestProductMatch = (
+  sourceProduct: FactProduct,
+  candidates: FactProduct[],
+) => {
+  let bestMatch: FactProduct | undefined;
+  let bestScore = 0;
+
+  candidates.forEach((candidate) => {
+    const score = getProductMatchScore(sourceProduct.Name, candidate.Name);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = candidate;
+    }
+  });
+
+  return bestScore >= 0.5 ? bestMatch : undefined;
+};
+
 export default function ListDetails() {
   const auth = useAuth();
 
@@ -77,9 +140,9 @@ export default function ListDetails() {
   const handleItemToAddChange = (text: string) => {
     const trimmed = text.trim();
     if (trimmed.startsWith("http")) {
-      setItemToAdd({ additionType: "link", value: trimmed });
+      setItemToAdd({ additionType: "link", value: text });
     } else {
-      setItemToAdd({ additionType: "name", value: trimmed });
+      setItemToAdd({ additionType: "name", value: text });
     }
   };
 
@@ -97,9 +160,24 @@ export default function ListDetails() {
   const [selectedColesLink, setSelectedColesProduct] = useState<string>("");
   const [selectedWoolworthsLink, setSelectedWoolworthsProduct] =
     useState<string>("");
+  const [manualColesLink, setManualColesLink] = useState("");
+  const [manualWoolworthsLink, setManualWoolworthsLink] = useState("");
+  const [manualColesFocused, setManualColesFocused] = useState(false);
+  const [manualWoolworthsFocused, setManualWoolworthsFocused] =
+    useState(false);
   const productCount = details.length;
   const canCompare = productCount >= 1;
-  const hasSelectedProducts = !!selectedColesLink && !!selectedWoolworthsLink;
+  const selectedOrManualColesLink = selectedColesLink || manualColesLink.trim();
+  const selectedOrManualWoolworthsLink =
+    selectedWoolworthsLink || manualWoolworthsLink.trim();
+  const hasSelectedProducts =
+    !!selectedOrManualColesLink && !!selectedOrManualWoolworthsLink;
+  const noSearchResults =
+    showSearchResults &&
+    colesOptions.length === 0 &&
+    woolworthsOptions.length === 0 &&
+    !selectedColesLink &&
+    !selectedWoolworthsLink;
 
   const showSuccessMessage = (message: string) => {
     if (successTimer.current) {
@@ -124,6 +202,51 @@ export default function ListDetails() {
     setItemToAdd({ additionType: "name", value: "" });
   };
 
+  const clearSearchResults = () => {
+    setShowSearchResults(false);
+    setColesOptions([]);
+    setWoolworthsOptions([]);
+    setSelectedColesProduct("");
+    setSelectedWoolworthsProduct("");
+    setManualColesLink("");
+    setManualWoolworthsLink("");
+    setErrorMessage("");
+  };
+
+  const handleSelectColesProduct = (product: FactProduct) => {
+    if (selectedColesLink === product.Link) {
+      setSelectedColesProduct("");
+      return;
+    }
+
+    setSelectedColesProduct(product.Link);
+    setManualColesLink("");
+
+    if (!selectedWoolworthsLink && !manualWoolworthsLink.trim()) {
+      const woolworthsMatch = findBestProductMatch(product, woolworthsOptions);
+      if (woolworthsMatch) {
+        setSelectedWoolworthsProduct(woolworthsMatch.Link);
+      }
+    }
+  };
+
+  const handleSelectWoolworthsProduct = (product: FactProduct) => {
+    if (selectedWoolworthsLink === product.Link) {
+      setSelectedWoolworthsProduct("");
+      return;
+    }
+
+    setSelectedWoolworthsProduct(product.Link);
+    setManualWoolworthsLink("");
+
+    if (!selectedColesLink && !manualColesLink.trim()) {
+      const colesMatch = findBestProductMatch(product, colesOptions);
+      if (colesMatch) {
+        setSelectedColesProduct(colesMatch.Link);
+      }
+    }
+  };
+
   const handleAddItem = async () => {
     const isSubmittingSelection = hasSelectedProducts;
     if (!itemToAdd.value.trim() && !isSubmittingSelection) return;
@@ -144,9 +267,9 @@ export default function ListDetails() {
           ListID: listID,
           UserID: userID,
         };
-        if (!!selectedColesLink && !!selectedWoolworthsLink) {
-          payload["ProductLinks"]["Coles"] = selectedColesLink;
-          payload["ProductLinks"]["Woolworths"] = selectedWoolworthsLink;
+        if (hasSelectedProducts) {
+          payload["ProductLinks"]["Coles"] = selectedOrManualColesLink;
+          payload["ProductLinks"]["Woolworths"] = selectedOrManualWoolworthsLink;
         } else if (link.includes("coles.com.au")) {
           payload["ProductLinks"]["Coles"] = link;
         } else if (link.includes("woolworths.com.au")) {
@@ -177,6 +300,8 @@ export default function ListDetails() {
           setShowSearchResults(false);
           setSelectedColesProduct("");
           setSelectedWoolworthsProduct("");
+          setManualColesLink("");
+          setManualWoolworthsLink("");
           showSuccessMessage("Product added successfully.");
         } else {
           // This is where the search options are shown
@@ -184,11 +309,15 @@ export default function ListDetails() {
             setSelectedColesProduct(response.ColesLink);
           } else if (response.ColesOptions) {
             setColesOptions(response.ColesOptions);
+          } else {
+            setColesOptions([]);
           }
           if (response.WoolworthsLink) {
             setSelectedWoolworthsProduct(response.WoolworthsLink);
           } else if (response.WoolworthsOptions) {
             setWoolworthsOptions(response.WoolworthsOptions);
+          } else {
+            setWoolworthsOptions([]);
           }
           setShowSearchResults(true);
         }
@@ -218,11 +347,15 @@ export default function ListDetails() {
             setSelectedColesProduct(response.ColesLink);
           } else if (response.ColesOptions) {
             setColesOptions(response.ColesOptions);
+          } else {
+            setColesOptions([]);
           }
           if (response.WoolworthsLink) {
             setSelectedWoolworthsProduct(response.WoolworthsLink);
           } else if (response.WoolworthsOptions) {
             setWoolworthsOptions(response.WoolworthsOptions);
+          } else {
+            setWoolworthsOptions([]);
           }
           setShowSearchResults(true);
         }
@@ -303,6 +436,12 @@ export default function ListDetails() {
               <Text style={g.textLabel}>Products in List</Text>
               <Text style={styles.countPill}>{productCount}</Text>
             </View>
+            <Text style={g.textBody}>
+              Add products by searching for a name or pasting a Coles or
+              Woolworths link. If search results appear, choose one product from
+              each store, or choose one result and paste a manual link for the
+              other store.
+            </Text>
           </View>
 
           <Pressable
@@ -353,7 +492,61 @@ export default function ListDetails() {
             <View style={styles.searchResults}>
               <View style={styles.searchHeader}>
                 <Text style={g.textLabel}>Search Results</Text>
+                <Pressable
+                  onPress={clearSearchResults}
+                  style={g.buttonOutlined}
+                  accessibilityRole="button"
+                >
+                  <Text style={g.buttonOutlinedText}>Cancel Search</Text>
+                </Pressable>
               </View>
+
+              {noSearchResults && (
+                <View style={styles.emptyResults}>
+                  <Text style={g.textBody}>No matching products found.</Text>
+                  <Text style={g.textCaption}>
+                    Try a different product name or paste direct product links.
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.manualLinks}>
+                {!selectedColesLink && !!selectedWoolworthsLink && (
+                  <View style={styles.manualLinkField}>
+                    <Text style={g.inputLabel}>Manual Coles link</Text>
+                    <TextInput
+                      placeholder="Paste a Coles product link"
+                      placeholderTextColor={colors.textSecondary}
+                      value={manualColesLink}
+                      onChangeText={setManualColesLink}
+                      onFocus={() => setManualColesFocused(true)}
+                      onBlur={() => setManualColesFocused(false)}
+                      style={[
+                        g.input,
+                        manualColesFocused && g.inputFocused,
+                      ]}
+                    />
+                  </View>
+                )}
+                {!selectedWoolworthsLink && !!selectedColesLink && (
+                  <View style={styles.manualLinkField}>
+                    <Text style={g.inputLabel}>Manual Woolworths link</Text>
+                    <TextInput
+                      placeholder="Paste a Woolworths product link"
+                      placeholderTextColor={colors.textSecondary}
+                      value={manualWoolworthsLink}
+                      onChangeText={setManualWoolworthsLink}
+                      onFocus={() => setManualWoolworthsFocused(true)}
+                      onBlur={() => setManualWoolworthsFocused(false)}
+                      style={[
+                        g.input,
+                        manualWoolworthsFocused && g.inputFocused,
+                      ]}
+                    />
+                  </View>
+                )}
+              </View>
+
               <View style={styles.resultColumns}>
                 {colesOptions.length > 0 && (
                   <View style={styles.resultList}>
@@ -361,7 +554,7 @@ export default function ListDetails() {
                     {colesOptions.map((product) => (
                       <Pressable
                         key={`coles-${product.Name}`}
-                        onPress={() => setSelectedColesProduct(product.Link)}
+                        onPress={() => handleSelectColesProduct(product)}
                         style={[
                           styles.optionRow,
                           selectedColesLink === product.Link &&
@@ -370,10 +563,14 @@ export default function ListDetails() {
                       >
                         <FactProductItem product={product} variant="search" />
                         <Pressable
-                          onPress={() => setSelectedColesProduct(product.Link)}
+                          onPress={() => handleSelectColesProduct(product)}
                           style={g.buttonOutlined}
                         >
-                          <Text style={g.buttonOutlinedText}>Choose</Text>
+                          <Text style={g.buttonOutlinedText}>
+                            {selectedColesLink === product.Link
+                              ? "Deselect"
+                              : "Choose"}
+                          </Text>
                         </Pressable>
                       </Pressable>
                     ))}
@@ -385,9 +582,7 @@ export default function ListDetails() {
                     {woolworthsOptions.map((product) => (
                       <Pressable
                         key={`woolworths-${product.Name}`}
-                        onPress={() =>
-                          setSelectedWoolworthsProduct(product.Link)
-                        }
+                        onPress={() => handleSelectWoolworthsProduct(product)}
                         style={[
                           styles.optionRow,
                           selectedWoolworthsLink === product.Link &&
@@ -396,12 +591,14 @@ export default function ListDetails() {
                       >
                         <FactProductItem product={product} variant="search" />
                         <Pressable
-                          onPress={() =>
-                            setSelectedWoolworthsProduct(product.Link)
-                          }
+                          onPress={() => handleSelectWoolworthsProduct(product)}
                           style={g.buttonOutlined}
                         >
-                          <Text style={g.buttonOutlinedText}>Choose</Text>
+                          <Text style={g.buttonOutlinedText}>
+                            {selectedWoolworthsLink === product.Link
+                              ? "Deselect"
+                              : "Choose"}
+                          </Text>
                         </Pressable>
                       </Pressable>
                     ))}
@@ -487,7 +684,6 @@ export default function ListDetails() {
 
             <View style={styles.form}>
               <View>
-                <Text style={g.inputLabel}>Product name or link</Text>
                 <TextInput
                   placeholder="Product name or product link"
                   placeholderTextColor={colors.textSecondary}
@@ -673,6 +869,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.md,
+  },
+
+  emptyResults: {
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+  },
+
+  manualLinks: {
+    gap: spacing.md,
+  },
+
+  manualLinkField: {
+    gap: spacing.xs,
   },
 
   resultColumns: {

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import Head from "expo-router/head";
 import {
   Sora_400Regular,
   Sora_500Medium,
@@ -24,6 +25,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+      <Head>
+        <title>Shopping Saver</title>
+      </Head>
       <Stack
         screenOptions={{
           headerShown: false,

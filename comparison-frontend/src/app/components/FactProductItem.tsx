@@ -44,7 +44,7 @@ export default function FactProductItem({
         onError={() => setImageUri(fallbackImage)}
       />
       <View style={styles.infoContainer}>
-        <Text style={g.textBody} numberOfLines={2}>
+        <Text style={g.textBody} numberOfLines={variant === "search" ? 4 : 2}>
           {product.Name}
         </Text>
         <Text style={g.textCaption}>{product.Store}</Text>
