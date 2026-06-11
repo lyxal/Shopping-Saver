@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
 import { SigninResponse } from "../lib/types";
 import { styles as g, colors, spacing } from "../styles/global";
+import { Svg, Path } from "react-native-svg";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -38,8 +39,8 @@ export default function LandingPage() {
 
   return (
     <View style={g.screenContainerCentered}>
-      <Text style={g.textHeading}>Unlock a world of savings.</Text>
-      <Text style={g.textHeading}>One shop at a time.</Text>
+      <Text style={g.textHeading}>Your Groceries Shopping</Text>
+      <Text style={g.textHeadingAmber}>Enhancer</Text>
 
       <Image
         source={require("../../../assets/images/PlanetSplash.png")}
@@ -48,7 +49,7 @@ export default function LandingPage() {
 
       <View style={styles.inputRow}>
         <TextInput
-          placeholder="Enter your email"
+          placeholder="Enter your email to get started"
           placeholderTextColor={colors.textSecondary}
           value={email}
           onChangeText={setEmail}
@@ -66,7 +67,7 @@ export default function LandingPage() {
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={g.buttonPrimaryText}>Get Started</Text>
+          <Text style={g.buttonPrimaryText}>Sign In</Text>
         </Pressable>
       </View>
     </View>
@@ -76,9 +77,9 @@ export default function LandingPage() {
 // Local styles — layout and sizing specific to this screen only.
 const styles = StyleSheet.create({
   globe: {
-    width: 300,
-    height: 300,
-    marginVertical: spacing.xl,
+    width: 450,
+    height: 450,
+    marginVertical: spacing.lg,
   },
 
   inputRow: {
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   },
 
   emailInput: {
-    width: 200,
+    width: 300,
   },
 
   buttonPressed: {

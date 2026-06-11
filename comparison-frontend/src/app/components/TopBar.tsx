@@ -15,7 +15,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     paddingTop: spacing.lg,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
     backgroundColor: colors.background,
   },
 });

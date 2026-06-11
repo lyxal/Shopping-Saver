@@ -40,11 +40,11 @@ export const spacing = {
 } as const;
 
 export const typography = {
-  sizeSm:        13,
-  sizeMd:        15,
-  sizeLg:        18,
-  sizeXl:        24,
-  sizeXxl:       32,
+  sizeSm:        15,
+  sizeMd:        18,
+  sizeLg:        24,
+  sizeXl:        40,
+  sizeXxl:       60,
   weightRegular:  '400' as const,
   weightMedium:   '500' as const,
   weightSemibold: '600' as const,
@@ -170,7 +170,7 @@ export const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    minHeight: 44,
+    minHeight: 52,
   },
   inputFocused: {
     borderColor: colors.borderFocus,
@@ -212,7 +212,7 @@ export const styles = StyleSheet.create({
   // Primary — white bg, black text ("Continue", "Get Started", "Confirm")
   buttonPrimary: {
     backgroundColor: colors.surfaceWhite,
-    borderRadius: radii.full,
+    borderRadius: radii.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     alignItems: 'center',
