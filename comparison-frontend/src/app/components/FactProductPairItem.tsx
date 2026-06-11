@@ -1,4 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SymbolView } from "expo-symbols";
 import { colors, radii, spacing, typography } from "../styles/global";
 import FactProductItem from "./FactProductItem";
@@ -48,26 +54,26 @@ export default function FactProductPairItem({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    flexDirection: "row",
-    alignItems: "stretch",
-    gap: spacing.md,
+    position: "relative",
   },
 
   products: {
-    flex: 1,
+    width: "100%",
     flexDirection: "row",
     alignItems: "stretch",
     gap: spacing.md,
   },
 
   removeButton: {
+    position: "absolute",
+    right: -(spacing.xxl + spacing.md),
+    top: "50%",
     width: 44,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
+    transform: [{ translateY: -22 }],
     borderWidth: 1,
-    borderColor: colors.textPrimary,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceHigh,
   },

@@ -333,7 +333,6 @@ export default function ListDetails() {
                 <Text style={styles.columnLabel}>Coles</Text>
                 <Text style={styles.columnLabel}>Woolworths</Text>
               </View>
-              <View style={styles.removeLabelSpacer} />
             </View>
           )}
 
@@ -636,10 +635,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     gap: spacing.md,
-  },
-
-  removeLabelSpacer: {
-    width: 44,
   },
 
   stickyLabels: {

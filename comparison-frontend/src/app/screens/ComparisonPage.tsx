@@ -211,6 +211,19 @@ export default function ComparisonPage() {
 
                 <View style={styles.summaryGrid}>
                   <View style={styles.summaryCard}>
+                    <Text style={styles.storeLabel}>Coles</Text>
+                    <Text style={styles.priceText}>
+                      ${comparisonData.TotalSalePrice.Coles.toFixed(2)}
+                    </Text>
+                    <Text style={g.textCaption}>
+                      Normal ${comparisonData.TotalNormalPrice.Coles.toFixed(2)}
+                    </Text>
+                    <Text style={styles.savingsText}>
+                      Savings ${comparisonData.TotalSavings.Coles.toFixed(2)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.summaryCard}>
                     <Text style={styles.storeLabel}>Woolworths</Text>
                     <Text style={styles.priceText}>
                       ${comparisonData.TotalSalePrice.Woolworths.toFixed(2)}
@@ -222,19 +235,6 @@ export default function ComparisonPage() {
                     <Text style={styles.savingsText}>
                       Savings $
                       {comparisonData.TotalSavings.Woolworths.toFixed(2)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.summaryCard}>
-                    <Text style={styles.storeLabel}>Coles</Text>
-                    <Text style={styles.priceText}>
-                      ${comparisonData.TotalSalePrice.Coles.toFixed(2)}
-                    </Text>
-                    <Text style={g.textCaption}>
-                      Normal ${comparisonData.TotalNormalPrice.Coles.toFixed(2)}
-                    </Text>
-                    <Text style={styles.savingsText}>
-                      Savings ${comparisonData.TotalSavings.Coles.toFixed(2)}
                     </Text>
                   </View>
                 </View>
@@ -256,6 +256,15 @@ export default function ComparisonPage() {
                 {comparisonData.Comparisons.map((comp, index) => {
                   const colesWins = comp.CheaperStore === "Coles";
                   const woolworthsWins = comp.CheaperStore === "Woolworths";
+                  const colesOnSale =
+                    comp.ColesPrice.SalePrice < comp.ColesPrice.NormalPrice;
+                  const woolworthsOnSale =
+                    comp.WoolworthsPrice.SalePrice <
+                    comp.WoolworthsPrice.NormalPrice;
+                  const priceDifference = Math.abs(comp.PriceDifference);
+                  const percentageDifference = Math.abs(
+                    comp.PercentageDifference,
+                  );
 
                   return (
                     <View key={index} style={styles.comparisonCard}>
@@ -280,15 +289,24 @@ export default function ComparisonPage() {
                                 </Text>
                               </View>
                             )}
+                            {colesOnSale && (
+                              <View style={styles.saleBadge}>
+                                <Text style={styles.saleBadgeText}>
+                                  On Sale
+                                </Text>
+                              </View>
+                            )}
                             <Text style={g.textBody} numberOfLines={2}>
                               {comp.ColesProduct.Name}
                             </Text>
                             <Text style={g.textCaption}>
                               Normal ${comp.ColesPrice.NormalPrice.toFixed(2)}
                             </Text>
-                            <Text style={styles.priceInline}>
-                              Sale ${comp.ColesPrice.SalePrice.toFixed(2)}
-                            </Text>
+                            {colesOnSale && (
+                              <Text style={styles.priceInline}>
+                                Sale ${comp.ColesPrice.SalePrice.toFixed(2)}
+                              </Text>
+                            )}
                           </View>
                         </View>
 
@@ -314,6 +332,13 @@ export default function ComparisonPage() {
                                 </Text>
                               </View>
                             )}
+                            {woolworthsOnSale && (
+                              <View style={styles.saleBadge}>
+                                <Text style={styles.saleBadgeText}>
+                                  On Sale
+                                </Text>
+                              </View>
+                            )}
                             <Text style={g.textBody} numberOfLines={2}>
                               {comp.WoolworthsProduct.Name}
                             </Text>
@@ -321,20 +346,22 @@ export default function ComparisonPage() {
                               Normal $
                               {comp.WoolworthsPrice.NormalPrice.toFixed(2)}
                             </Text>
-                            <Text style={styles.priceInline}>
-                              Sale $
-                              {comp.WoolworthsPrice.SalePrice.toFixed(2)}
-                            </Text>
+                            {woolworthsOnSale && (
+                              <Text style={styles.priceInline}>
+                                Sale $
+                                {comp.WoolworthsPrice.SalePrice.toFixed(2)}
+                              </Text>
+                            )}
                           </View>
                         </View>
                       </View>
 
                       <View style={styles.resultRow}>
                         <Text style={styles.savingsText}>
-                          Difference ${comp.PriceDifference.toFixed(2)}
+                          Difference ${priceDifference.toFixed(2)}
                         </Text>
                         <Text style={g.textCaption}>
-                          {comp.PercentageDifference.toFixed(2)}% cheaper at{" "}
+                          {percentageDifference.toFixed(2)}% cheaper at{" "}
                           {comp.CheaperStore}
                         </Text>
                       </View>
@@ -598,6 +625,23 @@ const styles = StyleSheet.create({
 
   winnerBadgeText: {
     color: colors.textDark,
+    fontFamily: typography.fontFamilyMonoMedium,
+    fontSize: typography.sizeXs,
+    fontWeight: typography.weightMedium,
+    textTransform: "uppercase",
+    letterSpacing: typography.letterSpacingCaps,
+  },
+
+  saleBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.accentSubtle,
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+
+  saleBadgeText: {
+    color: colors.textPrimary,
     fontFamily: typography.fontFamilyMonoMedium,
     fontSize: typography.sizeXs,
     fontWeight: typography.weightMedium,
