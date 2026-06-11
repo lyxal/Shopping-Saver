@@ -24,13 +24,24 @@ export async function getAPI<T>(
 
 export async function postAPI<T>(path: string, body: JSONValue): Promise<T> {
   const url = new URL(path, DEFAULT_API_BASE_URL);
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  console.log(`Making POST request to: ${url.toString()}`);
+
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? `Could not reach ${url.origin}. ${error.message}`
+        : `Could not reach ${url.origin}.`,
+    );
+  }
   if (!response.ok) {
     const responseText = await response.text();
     let message = `Request failed with status ${response.status}`;

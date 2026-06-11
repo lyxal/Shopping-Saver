@@ -11,7 +11,8 @@ export type JSONValue =
   | { [key: string]: JSONValue };
 
 export type SigninResponse = {
-    UserID: string;
+    UserID?: string;
+    userID?: string;
   };
 
 export type FactProduct = {

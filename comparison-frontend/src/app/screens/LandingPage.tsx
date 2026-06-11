@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Text,
   View,
   StyleSheet,
@@ -16,24 +17,52 @@ import { styles as g, colors, spacing } from "../styles/global";
 export default function LandingPage() {
   const [email, setEmail] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [shouldNavigateAfterSignin, setShouldNavigateAfterSignin] =
+    useState(false);
   const auth = useAuth();
 
   if (!auth) {
     return null;
   }
 
-  const { setUserID } = auth;
+  const { userID, setUserID } = auth;
+
+  useEffect(() => {
+    if (!shouldNavigateAfterSignin || !userID) return;
+    setShouldNavigateAfterSignin(false);
+    router.replace({ pathname: "/screens/ProductLists" });
+  }, [shouldNavigateAfterSignin, userID]);
 
   const handleGetStarted = async () => {
     const trimmedEmail = email.trim();
-    const payload = await postAPI<SigninResponse>("/signin", {
-      Email: trimmedEmail,
-    });
-    setEmail("");
-    setUserID(payload.UserID);
-    requestAnimationFrame(() => {
-      router.push("/screens/ProductLists");
-    });
+    if (!trimmedEmail || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMessage("");
+
+    try {
+      const payload = await postAPI<SigninResponse>("/signin", {
+        Email: trimmedEmail,
+      });
+      const userID = payload.UserID ?? payload.userID;
+      if (!userID) {
+        throw new Error("Sign in succeeded, but no user ID was returned.");
+      }
+
+      setEmail("");
+      setShouldNavigateAfterSignin(true);
+      setUserID(userID);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "We couldn't sign you in. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -62,17 +91,30 @@ export default function LandingPage() {
           style={[g.input, styles.emailInput, emailFocused && g.inputFocused]}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!isSubmitting}
         />
         <Pressable
           onPress={handleGetStarted}
+          disabled={isSubmitting || !email.trim()}
           style={({ pressed }) => [
             g.buttonPrimary,
+            (isSubmitting || !email.trim()) && styles.buttonDisabled,
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={g.buttonPrimaryText}>Sign In</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color={colors.textDark} />
+          ) : (
+            <Text style={g.buttonPrimaryText}>Sign In</Text>
+          )}
         </Pressable>
       </View>
+
+      {errorMessage ? (
+        <View style={styles.errorBanner}>
+          <Text style={g.errorBannerText}>{errorMessage}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -99,5 +141,16 @@ const styles = StyleSheet.create({
 
   buttonPressed: {
     opacity: 0.8,
+  },
+
+  buttonDisabled: {
+    opacity: 0.56,
+  },
+
+  errorBanner: {
+    ...g.errorBanner,
+    width: 520,
+    maxWidth: "90%",
+    marginTop: spacing.md,
   },
 });

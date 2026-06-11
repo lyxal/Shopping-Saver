@@ -36,10 +36,6 @@ export default function ComparisonPage() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   const { userID } = auth;
-  if (!userID) {
-    // Redirect to landing page
-    return <Redirect href="/" />;
-  }
 
   const { listID, listName } = useLocalSearchParams();
   const currentListID = Array.isArray(listID) ? listID[0] : listID;
@@ -86,7 +82,7 @@ export default function ComparisonPage() {
 
   const fallbackImage = "https://placehold.co/80x80?text=No+Image";
   useEffect(() => {
-    if (!loading) return;
+    if (!userID || !loading) return;
 
     const interval = setInterval(() => {
       setLoadingMessageIndex(
@@ -95,7 +91,7 @@ export default function ComparisonPage() {
     }, 2200);
 
     return () => clearInterval(interval);
-  }, [loading]);
+  }, [loading, userID]);
 
   useEffect(() => {
     const fetchComparison = async () => {
@@ -121,10 +117,15 @@ export default function ComparisonPage() {
       }
     };
 
-    if (currentListID) {
+    if (userID && currentListID) {
       fetchComparison();
     }
-  }, [currentListID]);
+  }, [currentListID, userID]);
+
+  if (!userID) {
+    // Redirect to landing page
+    return <Redirect href="/" />;
+  }
 
   return (
     <View style={g.screenContainer}>

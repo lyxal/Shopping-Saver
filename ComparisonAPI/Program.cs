@@ -6,6 +6,8 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
     .Get<string[]>() ?? [];
@@ -19,7 +21,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
-
 BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Utc));
 
 var mongoConnectionString = builder.Configuration["MongoDB:ConnectionString"];
@@ -40,10 +41,14 @@ var listsDb = new ListsDatabase(client);
 var factProductsDb = new FactProductsDatabase(client);
 var pricedProductsDb = new PricedProductsDatabase(client);
 
+builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.PropertyNamingPolicy = null; });
 
 var app = builder.Build();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("FrontendOnly");
-app.UseHttpsRedirection();
 
 
 app.MapGet("/", () => "I think you meant to call an API route.");
@@ -306,6 +311,7 @@ app.Use(async (context, next) =>
     context.Request.Body.Position = 0;
     Console.WriteLine($"Request path: {context.Request.Path}");
     Console.WriteLine($"Raw body: {body}");
+    Console.WriteLine($"Origin: {context.Request.Headers.Origin}");
 
     try
     {

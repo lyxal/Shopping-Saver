@@ -28,14 +28,14 @@ export default function ProductLists() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   const { userID } = auth;
-  if (!userID) {
-    // Redirect to landing page
-    return <Redirect href="/" />;
-  }
   const [lists, setLists] = useState<ProductListSummary[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [newListNameFocused, setNewListNameFocused] = useState(false);
 
   useEffect(() => {
     const fetchLists = async () => {
+      if (!userID) return;
       const response = await getAPI<ProductListSummary[]>(
         `/getLists/${userID}`,
         {},
@@ -44,6 +44,11 @@ export default function ProductLists() {
     };
     fetchLists();
   }, [userID]);
+
+  if (!userID) {
+    // Redirect to landing page
+    return <Redirect href="/" />;
+  }
 
   const handleListPress = (listID: string, listName: string) => {
     router.push({
@@ -55,11 +60,16 @@ export default function ProductLists() {
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
     const listName = newListName.trim();
-    const response = await postAPI<{ ListID: string }>("/createList", {
-      UserID: userID,
-      ListName: listName,
-    });
-    const newListID = response.ListID;
+    const response = await postAPI<{ ListID?: string; listID?: string }>(
+      "/createList",
+      {
+        UserID: userID,
+        ListName: listName,
+      },
+    );
+    const newListID = response.ListID ?? response.listID;
+    if (!newListID) return;
+
     setShowCreateForm(false);
     setNewListName("");
     router.push({
@@ -73,10 +83,6 @@ export default function ProductLists() {
     setNewListName("");
     setNewListNameFocused(false);
   };
-
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newListName, setNewListName] = useState("");
-  const [newListNameFocused, setNewListNameFocused] = useState(false);
 
   return (
     <View style={g.screenContainer}>

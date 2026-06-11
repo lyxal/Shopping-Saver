@@ -95,10 +95,6 @@ export default function ListDetails() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   const { userID } = auth;
-  if (!userID) {
-    // Redirect to landing page
-    return <Redirect href="/" />;
-  }
 
   // Read the listID from the query parameters
   const { listID, listName } = useLocalSearchParams();
@@ -110,7 +106,7 @@ export default function ListDetails() {
   const [disableSearchButton, setDisableSearchButton] = useState(false);
   useEffect(() => {
     const fetchDetails = async () => {
-      if (!listID) return;
+      if (!userID || !listID) return;
       const response = await getAPI<FactProductPair[]>(
         `/getlist/${userID}/${listID}`,
         {},
@@ -178,6 +174,11 @@ export default function ListDetails() {
     woolworthsOptions.length === 0 &&
     !selectedColesLink &&
     !selectedWoolworthsLink;
+
+  if (!userID) {
+    // Redirect to landing page
+    return <Redirect href="/" />;
+  }
 
   const showSuccessMessage = (message: string) => {
     if (successTimer.current) {
