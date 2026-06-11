@@ -1,30 +1,70 @@
 using System.Text.Json;
+using Microsoft.Playwright;
 
 public static class ColesScraper
 {
 
   public static string GetBuildID()
   {
+    return GetBuildIDAsync().GetAwaiter().GetResult();
+  }
+
+  private static async Task<string> GetBuildIDAsync()
+  {
     // This is a two-step process.
-    // 1. Scrape coles.com.au to get the script tag which references a script which contains the build ID in its file.
+    // 1. Load coles.com.au with JavaScript active to get the script tag which references a script which contains the build ID in its file.
     // This will be from `<script src="/_next/static/chunks/pages/_app-<SOMEID>.js" defer=""></script>`
-    // 2. Scrape that script to extract the build ID from the filename.
+    // 2. Fetch that script to extract the build ID from the filename.
     // Looking for `console.log("Build ID","<buildID>)`
 
     // This is crucial because it defines where you find the search API endpoint.
 
-    var client = new HttpClient();
-    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
-    var response = client.GetAsync("https://www.coles.com.au/");
-    var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
-    var scriptTagStart = rawResponse.IndexOf("<script src=\"/_next/static/chunks/pages/_app-") + "<script src=\"/_next/static/chunks/pages/_app-".Length;
-    var scriptTagEnd = rawResponse.IndexOf(".js\" defer=\"\"></script>", scriptTagStart);
-    var scriptURL = rawResponse.Substring(scriptTagStart, scriptTagEnd - scriptTagStart);
-    var scriptResponse = client.GetAsync("https://www.coles.com.au" + scriptURL);
-    var rawScriptResponse = scriptResponse.Result.Content.ReadAsStringAsync().Result;
+    using var playwright = await Playwright.CreateAsync();
+    await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+    {
+      Headless = true
+    });
+    await using var context = await browser.NewContextAsync(new BrowserNewContextOptions
+    {
+      UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0"
+    });
+
+    var page = await context.NewPageAsync();
+    var response = await page.GotoAsync("https://www.coles.com.au/", new PageGotoOptions
+    {
+      WaitUntil = WaitUntilState.Load,
+      Timeout = 60000
+    });
+
+    if (response == null || !response.Ok)
+      throw new InvalidOperationException($"Failed to fetch Coles homepage: {response?.StatusText ?? "No response"}");
+
+    var scriptSources = await page.Locator("script[src]").EvaluateAllAsync<string[]>(
+      "scripts => scripts.map(script => script.getAttribute('src')).filter(Boolean)"
+    );
+    var scriptURL = scriptSources.FirstOrDefault(src =>
+      src.Contains("/_next/static/chunks/pages/_app-") && src.EndsWith(".js")
+    );
+
+    if (scriptURL == null)
+      throw new InvalidOperationException("Failed to find Coles _app script on homepage");
+
+    var absoluteScriptURL = new Uri(new Uri("https://www.coles.com.au/"), scriptURL).ToString();
+    Console.WriteLine($"Extracted script URL: {absoluteScriptURL}");
+
+    var scriptResponse = await context.APIRequest.GetAsync(absoluteScriptURL);
+    if (!scriptResponse.Ok)
+      throw new InvalidOperationException($"Failed to fetch Coles _app script: {scriptResponse.Status} {scriptResponse.StatusText}");
+
+    var rawScriptResponse = await scriptResponse.TextAsync();
+    if (!rawScriptResponse.Contains("console.log(\"Build ID\",\""))
+      throw new InvalidOperationException("Failed to find build ID in script response");
     var buildIDStart = rawScriptResponse.IndexOf("console.log(\"Build ID\",\"") + "console.log(\"Build ID\",\"".Length;
+    Console.WriteLine($"Raw script response length: {rawScriptResponse.Length}");
+    Console.WriteLine($"Index of 'console.log(\"Build ID\",\"': {rawScriptResponse.IndexOf("console.log(\"Build ID\",\"")}");
     var buildIDEnd = rawScriptResponse.IndexOf("\")", buildIDStart);
-    var buildID = rawScriptResponse.Substring(buildIDStart, buildIDEnd - buildIDStart);
+    Console.WriteLine($"Start index of build ID in script: {buildIDStart}, End index: {buildIDEnd}");
+    var buildID = rawScriptResponse[buildIDStart..buildIDEnd];
     Console.WriteLine($"Extracted Coles build ID: {buildID}");
     return buildID;
   }
