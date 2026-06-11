@@ -29,7 +29,6 @@ public static class WoolworthsScraper
             throw new InvalidOperationException("Failed to extract product information");
 
         // Details
-        // TODO
         var product = new PricedProduct(
             ProductID: GetString(p, "ProductID") ?? Guid.NewGuid().ToString(),
             Store: "Woolworths",

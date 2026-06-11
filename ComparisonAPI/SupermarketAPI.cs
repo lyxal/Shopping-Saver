@@ -11,6 +11,9 @@ static class SupermarketAPI
         var cookies = new CookieContainer(); // These are the OUTPUT cookies.
         var handler = new HttpClientHandler(); // Cookieless because we need to capture the cookies from the initial request.
         var client = new HttpClient(handler);
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+        client.DefaultRequestHeaders.Add("Host", "www.woolworths.com.au");
+        client.DefaultRequestHeaders.Add("Origin", "https://www.woolworths.com.au");
         var response = client.GetAsync("https://woolworths.com.au");
         response.Wait();
         var setCookieHeaders = response.Result.Headers.GetValues("Set-Cookie");
@@ -26,6 +29,10 @@ static class SupermarketAPI
         var cookies = GetWoolworthsCookies(); // Need to get cookies every time because they expire.
         var handler = new HttpClientHandler { CookieContainer = cookies };
         var client = new HttpClient(handler);
+
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+        client.DefaultRequestHeaders.Add("Host", "www.woolworths.com.au");
+        client.DefaultRequestHeaders.Add("Origin", "https://www.woolworths.com.au");
 
         var productPageResponse = client.GetAsync(productLink);
         productPageResponse.Wait();
@@ -110,6 +117,9 @@ static class SupermarketAPI
         var API_URL = $"https://www.coles.com.au/_next/data/{BUILD_ID}/en/search/products.json?q={Uri.EscapeDataString(query)}";
         var client = new HttpClient();
         client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+        client.DefaultRequestHeaders.Add("Host", "www.coles.com.au");
+        client.DefaultRequestHeaders.Add("Origin", "https://www.coles.com.au");
+        client.DefaultRequestHeaders.Add("Referer", "https://www.coles.com.au/shop/search/products?searchTerm=" + Uri.EscapeDataString(query));
 
         var response = client.GetAsync(API_URL);
         var rawResponse = response.Result.Content.ReadAsStringAsync().Result;
@@ -135,6 +145,9 @@ static class SupermarketAPI
         var client = new HttpClient(new HttpClientHandler { CookieContainer = cookies });
 
         client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+        client.DefaultRequestHeaders.Add("Host", "www.woolworths.com.au");
+        client.DefaultRequestHeaders.Add("Origin", "https://www.woolworths.com.au");
+        client.DefaultRequestHeaders.Add("Referer", "https://www.woolworths.com.au/shop/search/products?searchTerm=" + Uri.EscapeDataString(query));
 
         var payload = new
         {

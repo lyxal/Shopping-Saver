@@ -196,6 +196,8 @@ public static class ColesScraper
       Timeout = TimeSpan.FromSeconds(30)
     };
     client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+    client.DefaultRequestHeaders.Add("Host", "www.coles.com.au");
+    client.DefaultRequestHeaders.Add("Origin", "https://www.coles.com.au");
     return client;
   }
 
