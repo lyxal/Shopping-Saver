@@ -37,8 +37,8 @@ export default function LandingPage() {
   };
 
   return (
-    <View style={g.screenContainerCentered}>
-      <Text style={g.textHeading}>Your Groceries Shopping</Text>
+    <View style={[g.screenContainerCentered, { marginTop: -spacing.md }]}>
+      <Text style={g.textHeading}>Your Grocery Shopping</Text>
       <Text style={g.textHeadingAmber}>Enhancer</Text>
 
       <Image
