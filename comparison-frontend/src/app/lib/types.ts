@@ -25,7 +25,7 @@ export type FactProduct = {
 export type ProductListSummary = {
     ListID: string,
     ListName: string,
-    ProductCount: number,
+    ProductCount: string,
     LastEdited: string,
     CreatedAt: string
   };

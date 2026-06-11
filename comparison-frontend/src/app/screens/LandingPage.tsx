@@ -12,7 +12,6 @@ import { useAuth } from "../context/AuthContext";
 import { router } from "expo-router";
 import { SigninResponse } from "../lib/types";
 import { styles as g, colors, spacing } from "../styles/global";
-import { Svg, Path } from "react-native-svg";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -89,7 +88,9 @@ const styles = StyleSheet.create({
   },
 
   emailInput: {
-    width: 300,
+    width: 350,
+    // Center the text vertically within the input field
+    textAlignVertical: "center",
   },
 
   buttonPressed: {

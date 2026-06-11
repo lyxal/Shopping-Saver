@@ -20,11 +20,11 @@ export const colors = {
   accent:        '#1D7EF5',
   accentSubtle:  '#0F2A4A',
   // Amber — savings figures, offer highlights, success/celebration headings
-  amber:         '#F5A623',
+  amber:         '#fae681',
   amberSubtle:   '#2A1F0A',
   amberBadge:    '#F5A020',   // "CHEAPEST" pill background (slightly muted)
   // Alert/badge red — "SAVINGS ALERT" pill, not for errors
-  alertRed:      '#E8442A',
+  alertRed:      '#FD5422',
   // Error — form validation banners and messages
   errorBg:       '#3D0014',
   destructive:   '#FF3B6B',
@@ -40,6 +40,7 @@ export const spacing = {
 } as const;
 
 export const typography = {
+  sizeXs:        12,
   sizeSm:        15,
   sizeMd:        18,
   sizeLg:        24,
@@ -49,7 +50,11 @@ export const typography = {
   weightMedium:   '500' as const,
   weightSemibold: '600' as const,
   weightBold:     '700' as const,
-  fontFamily:    'Arial',
+  fontFamily:    'Sora_400Regular',
+  fontFamilyMedium: 'Sora_500Medium',
+  fontFamilySemibold: 'Sora_600SemiBold',
+  fontFamilyBold: 'Sora_700Bold',
+  fontFamilyMonoMedium: 'DMMono_500Medium',
   letterSpacingCaps: 1.2,  // for uppercase label style
 } as const;
 
@@ -87,25 +92,25 @@ export const styles = StyleSheet.create({
 
   // Typography — on dark backgrounds
   textDisplay: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilyBold,
     fontSize: typography.sizeXxl,
     fontWeight: typography.weightBold,
     color: colors.textPrimary,
   },
   textHeading: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilyBold,
     fontSize: typography.sizeXl,
     fontWeight: typography.weightBold,
     color: colors.textPrimary,
   },
   textHeadingAmber: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilyBold,
     fontSize: typography.sizeXl,
     fontWeight: typography.weightBold,
     color: colors.amber,              // for success/celebration screens
   },
   textSubheading: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilySemibold,
     fontSize: typography.sizeLg,
     fontWeight: typography.weightSemibold,
     color: colors.textPrimary,
@@ -115,6 +120,8 @@ export const styles = StyleSheet.create({
     fontSize: typography.sizeMd,
     fontWeight: typography.weightRegular,
     color: colors.textPrimary,
+    // Text align justify for better readability on narrow screens and prevent rivers of white space
+    textAlign: 'justify',
   },
   textCaption: {
     fontFamily: typography.fontFamily,
@@ -124,7 +131,7 @@ export const styles = StyleSheet.create({
   },
   // Uppercase section labels: "CURRENT MORTGAGE", "CHEAPEST", etc.
   textLabel: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilyMedium,
     fontSize: typography.sizeSm,
     fontWeight: typography.weightMedium,
     color: colors.textSecondary,
@@ -133,14 +140,14 @@ export const styles = StyleSheet.create({
   },
   // Amber — savings figures displayed inline in text
   textAmber: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilySemibold,
     fontSize: typography.sizeMd,
     fontWeight: typography.weightSemibold,
     color: colors.amber,
   },
   // Typography — on white surfaces (surfaceWhite cards)
   textHeadingDark: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilyBold,
     fontSize: typography.sizeXl,
     fontWeight: typography.weightBold,
     color: colors.textDark,
@@ -179,7 +186,7 @@ export const styles = StyleSheet.create({
     borderColor: colors.borderError,
   },
   inputLabel: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilyMedium,
     fontSize: typography.sizeSm,
     fontWeight: typography.weightMedium,
     color: colors.textSecondary,
@@ -220,7 +227,7 @@ export const styles = StyleSheet.create({
     minHeight: 52,
   },
   buttonPrimaryText: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilySemibold,
     fontSize: typography.sizeMd,
     fontWeight: typography.weightSemibold,
     color: colors.textDark,
@@ -237,7 +244,7 @@ export const styles = StyleSheet.create({
     minHeight: 52,
   },
   buttonDarkText: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilySemibold,
     fontSize: typography.sizeMd,
     fontWeight: typography.weightSemibold,
     color: colors.textPrimary,
@@ -253,7 +260,7 @@ export const styles = StyleSheet.create({
     minHeight: 52,
   },
   buttonAmberText: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilySemibold,
     fontSize: typography.sizeMd,
     fontWeight: typography.weightSemibold,
     color: colors.textDark,
@@ -270,7 +277,7 @@ export const styles = StyleSheet.create({
     minHeight: 44,
   },
   buttonOutlinedText: {
-    fontFamily: typography.fontFamily,
+    fontFamily: typography.fontFamilyMedium,
     fontSize: typography.sizeSm,
     fontWeight: typography.weightMedium,
     color: colors.textPrimary,
@@ -282,13 +289,13 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.alertRed,
     borderRadius: radii.full,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   badgeAlertText: {
-    fontFamily: typography.fontFamily,
-    fontSize: typography.sizeSm,
-    fontWeight: typography.weightBold,
-    color: colors.textPrimary,
+    fontFamily: typography.fontFamilyMonoMedium,
+    fontSize: typography.sizeXs,
+    fontWeight: typography.weightMedium,
+    color: colors.textDark,
     textTransform: 'uppercase',
     letterSpacing: typography.letterSpacingCaps,
   },
@@ -300,8 +307,8 @@ export const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   badgeAmberText: {
-    fontFamily: typography.fontFamily,
-    fontSize: typography.sizeSm,
+    fontFamily: typography.fontFamilyBold,
+    fontSize: typography.sizeXs,
     fontWeight: typography.weightBold,
     color: colors.textDark,
     textTransform: 'uppercase',
