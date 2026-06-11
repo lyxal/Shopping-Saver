@@ -6,34 +6,31 @@ on:
       - main
   workflow_dispatch:
 
+defaults:
+  run:
+    working-directory: comparison-frontend
+
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      PROJECT_DIR: comparison-frontend
       EXPO_BASE_URL: /${{ github.event.repository.name }}
       EXPO_PUBLIC_API_BASE_URL: https://shopsave-f0fub9eee4dhazbr.japaneast-01.azurewebsites.net
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Change to project directory
-        run: cd ${{ env.PROJECT_DIR }}
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: comparison-frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -50,15 +47,4 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          path: comparison-frontend/dist
