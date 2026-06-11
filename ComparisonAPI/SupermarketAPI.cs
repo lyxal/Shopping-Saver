@@ -106,7 +106,8 @@ static class SupermarketAPI
 
     static public List<FactProduct> SearchColes(string query)
     {
-        var API_URL = $"https://www.coles.com.au/_next/data/20260528.5-2fe21bafe8ec119eaa36ff296d6f5b95a2f6e138/en/search/products.json?q={Uri.EscapeDataString(query)}";
+        var BUILD_ID = ColesScraper.GetBuildID();
+        var API_URL = $"https://www.coles.com.au/_next/data/{BUILD_ID}/en/search/products.json?q={Uri.EscapeDataString(query)}";
         var client = new HttpClient();
         client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
 

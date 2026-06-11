@@ -367,6 +367,7 @@ app.Use(async (context, next) =>
     catch (Exception ex)
     {
         Console.WriteLine($"Internal server error: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
         context.Response.StatusCode = 500;
         await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
     }
