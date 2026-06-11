@@ -3,6 +3,12 @@ using Microsoft.Playwright;
 
 public static class ColesScraper
 {
+  private const string BuildIDMarker = "console.log(\"Build ID\",\"";
+  private static readonly SemaphoreSlim BuildCacheLock = new(1, 1);
+  private static readonly HttpClient ColesScriptClient = CreateColesScriptClient();
+  private static ColesBuildCache? InMemoryBuildCache;
+
+  private record ColesBuildCache(string? BuildID, string AppScriptURL);
 
   public static string GetBuildID()
   {
@@ -10,6 +16,39 @@ public static class ColesScraper
   }
 
   private static async Task<string> GetBuildIDAsync()
+  {
+    await BuildCacheLock.WaitAsync();
+    try
+    {
+      var cachedBuild = LoadBuildCache();
+      if (cachedBuild != null)
+      {
+        var cachedBuildID = await TryFetchBuildIDFromScriptAsync(cachedBuild.AppScriptURL);
+        if (cachedBuildID != null)
+        {
+          SaveBuildCache(cachedBuild with { BuildID = cachedBuildID });
+          Console.WriteLine($"Using cached Coles _app script URL: {cachedBuild.AppScriptURL}");
+          return cachedBuildID;
+        }
+
+        Console.WriteLine("Cached Coles _app script URL failed. Scraping homepage with Playwright.");
+      }
+      else
+      {
+        Console.WriteLine("No Coles build cache found. Scraping homepage with Playwright.");
+      }
+
+      var scrapedBuild = await ScrapeBuildCacheWithPlaywrightAsync();
+      SaveBuildCache(scrapedBuild);
+      return scrapedBuild.BuildID ?? throw new InvalidOperationException("Failed to scrape Coles build ID");
+    }
+    finally
+    {
+      BuildCacheLock.Release();
+    }
+  }
+
+  private static async Task<ColesBuildCache> ScrapeBuildCacheWithPlaywrightAsync()
   {
     // This is a two-step process.
     // 1. Load coles.com.au with JavaScript active to get the script tag which references a script which contains the build ID in its file.
@@ -47,7 +86,12 @@ public static class ColesScraper
     );
 
     if (scriptURL == null)
+    {
+      Console.WriteLine("Failed to find Coles _app script on homepage. Scraped HTML:");
+      var htmlContent = await page.ContentAsync();
+      Console.WriteLine(htmlContent);
       throw new InvalidOperationException("Failed to find Coles _app script on homepage");
+    }
 
     var absoluteScriptURL = new Uri(new Uri("https://www.coles.com.au/"), scriptURL).ToString();
     Console.WriteLine($"Extracted script URL: {absoluteScriptURL}");
@@ -57,17 +101,104 @@ public static class ColesScraper
       throw new InvalidOperationException($"Failed to fetch Coles _app script: {scriptResponse.Status} {scriptResponse.StatusText}");
 
     var rawScriptResponse = await scriptResponse.TextAsync();
-    if (!rawScriptResponse.Contains("console.log(\"Build ID\",\""))
-      throw new InvalidOperationException("Failed to find build ID in script response");
-    var buildIDStart = rawScriptResponse.IndexOf("console.log(\"Build ID\",\"") + "console.log(\"Build ID\",\"".Length;
+    var buildID = ExtractBuildIDFromScript(rawScriptResponse);
     Console.WriteLine($"Raw script response length: {rawScriptResponse.Length}");
-    Console.WriteLine($"Index of 'console.log(\"Build ID\",\"': {rawScriptResponse.IndexOf("console.log(\"Build ID\",\"")}");
-    var buildIDEnd = rawScriptResponse.IndexOf("\")", buildIDStart);
-    Console.WriteLine($"Start index of build ID in script: {buildIDStart}, End index: {buildIDEnd}");
-    var buildID = rawScriptResponse[buildIDStart..buildIDEnd];
     Console.WriteLine($"Extracted Coles build ID: {buildID}");
-    return buildID;
+    return new ColesBuildCache(buildID, absoluteScriptURL);
   }
+
+  private static async Task<string?> TryFetchBuildIDFromScriptAsync(string scriptURL)
+  {
+    try
+    {
+      using var response = await ColesScriptClient.GetAsync(scriptURL);
+      if (!response.IsSuccessStatusCode)
+      {
+        Console.WriteLine($"Cached Coles _app script returned {(int)response.StatusCode} {response.ReasonPhrase}: {scriptURL}");
+        return null;
+      }
+
+      var rawScriptResponse = await response.Content.ReadAsStringAsync();
+      return ExtractBuildIDFromScript(rawScriptResponse);
+    }
+    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
+    {
+      Console.WriteLine($"Cached Coles _app script could not be used: {ex.Message}");
+      return null;
+    }
+  }
+
+  private static string ExtractBuildIDFromScript(string rawScriptResponse)
+  {
+    var buildIDStart = rawScriptResponse.IndexOf(BuildIDMarker, StringComparison.Ordinal);
+    if (buildIDStart < 0)
+      throw new InvalidOperationException("Failed to find build ID in script response");
+
+    buildIDStart += BuildIDMarker.Length;
+    var buildIDEnd = rawScriptResponse.IndexOf("\")", buildIDStart, StringComparison.Ordinal);
+    if (buildIDEnd < 0)
+      throw new InvalidOperationException("Failed to find end of build ID in script response");
+
+    return rawScriptResponse[buildIDStart..buildIDEnd];
+  }
+
+  private static ColesBuildCache? LoadBuildCache()
+  {
+    if (InMemoryBuildCache != null)
+      return InMemoryBuildCache;
+
+    var cachePath = GetBuildCachePath();
+    if (!File.Exists(cachePath))
+      return null;
+
+    try
+    {
+      var rawCache = File.ReadAllText(cachePath);
+      InMemoryBuildCache = JsonSerializer.Deserialize<ColesBuildCache>(rawCache);
+      return InMemoryBuildCache;
+    }
+    catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+    {
+      Console.WriteLine($"Failed to read Coles build cache: {ex.Message}");
+      return null;
+    }
+  }
+
+  private static void SaveBuildCache(ColesBuildCache cache)
+  {
+    InMemoryBuildCache = cache;
+
+    var cachePath = GetBuildCachePath();
+    try
+    {
+      Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+      File.WriteAllText(cachePath, JsonSerializer.Serialize(cache));
+    }
+    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+    {
+      Console.WriteLine($"Failed to save Coles build cache: {ex.Message}");
+    }
+  }
+
+  private static string GetBuildCachePath()
+  {
+    var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    if (string.IsNullOrWhiteSpace(localAppData))
+      localAppData = AppContext.BaseDirectory;
+
+    return Path.Combine(localAppData, "ComparisonAPI", "coles-build-cache.json");
+  }
+
+  private static HttpClient CreateColesScriptClient()
+  {
+    var client = new HttpClient
+    {
+      Timeout = TimeSpan.FromSeconds(30)
+    };
+    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+    return client;
+  }
+
   public static Dictionary<string, JsonElement> ExtractProductDataFor(string colesProductUrl)
   {
     var colesProductID = colesProductUrl.Split("/").Last().Split('-').Last(); // Coles product links end with the product ID, so we can extract it from the link.

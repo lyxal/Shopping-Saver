@@ -30,6 +30,19 @@ export async function postAPI<T>(path: string, body: JSONValue): Promise<T> {
     },
     body: JSON.stringify(body),
   });
+  if (!response.ok) {
+    const responseText = await response.text();
+    let message = `Request failed with status ${response.status}`;
+    try {
+      const parsed = JSON.parse(responseText) as { Message?: string; message?: string };
+      message = parsed.Message ?? parsed.message ?? message;
+    } catch {
+      if (responseText) {
+        message = responseText;
+      }
+    }
+    throw new Error(message);
+  }
   const result = await response.json();
   return result as T;
 }

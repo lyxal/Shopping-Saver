@@ -9,7 +9,7 @@ export const colors = {
   surface:       '#0F0F0F',
   surfaceHigh:   '#1A1A1A',
   surfaceWhite:  '#FFFFFF',   // white cards (featured offers, prominent content)
-  border:        '#2A2A2A',
+  border:        '#FFFFFF',
   borderFocus:   '#FFFFFF',   // input border when focused
   borderError:   '#FF3B6B',   // input border when validation fails
   textPrimary:   '#FFFFFF',
@@ -20,7 +20,7 @@ export const colors = {
   accent:        '#1D7EF5',
   accentSubtle:  '#0F2A4A',
   // Amber — savings figures, offer highlights, success/celebration headings
-  amber:         '#fae681',
+  amber:         '#F2AC59',
   amberSubtle:   '#2A1F0A',
   amberBadge:    '#F5A020',   // "CHEAPEST" pill background (slightly muted)
   // Alert/badge red — "SAVINGS ALERT" pill, not for errors
