@@ -238,7 +238,7 @@ public class FactProductsDatabase
                     woolworthsProductDoc["ImageLink"].AsString
                 );
 
-                products.Add(new FactProductPair(colesProduct, woolworthsProduct));
+                products.Add(new FactProductPair(woolworthsProduct, colesProduct));
             }
         }
         return products;
