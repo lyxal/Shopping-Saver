@@ -439,8 +439,9 @@ export default function ListDetails() {
             <Text style={g.textBody}>
               Add products by searching for a name or pasting a Coles or
               Woolworths link. If search results appear, choose one product from
-              each store, or choose one result and paste a manual link for the
-              other store.
+              each store, or choose one result and, if the system does not find
+              an item in the other store's results with a similar name, paste a
+              manual link for the other store.
             </Text>
           </View>
 
