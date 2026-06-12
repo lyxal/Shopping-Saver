@@ -59,8 +59,7 @@ const getProductMatchScore = (sourceName: string, candidateName: string) => {
     }
   });
 
-  const overlap =
-    (2 * shared) / (sourceTokens.size + candidateTokens.size);
+  const overlap = (2 * shared) / (sourceTokens.size + candidateTokens.size);
   const sourceNormalized = Array.from(sourceTokens).join(" ");
   const candidateNormalized = Array.from(candidateTokens).join(" ");
   const containsName =
@@ -159,8 +158,7 @@ export default function ListDetails() {
   const [manualColesLink, setManualColesLink] = useState("");
   const [manualWoolworthsLink, setManualWoolworthsLink] = useState("");
   const [manualColesFocused, setManualColesFocused] = useState(false);
-  const [manualWoolworthsFocused, setManualWoolworthsFocused] =
-    useState(false);
+  const [manualWoolworthsFocused, setManualWoolworthsFocused] = useState(false);
   const productCount = details.length;
   const canCompare = productCount >= 1;
   const selectedOrManualColesLink = selectedColesLink || manualColesLink.trim();
@@ -270,7 +268,8 @@ export default function ListDetails() {
         };
         if (hasSelectedProducts) {
           payload["ProductLinks"]["Coles"] = selectedOrManualColesLink;
-          payload["ProductLinks"]["Woolworths"] = selectedOrManualWoolworthsLink;
+          payload["ProductLinks"]["Woolworths"] =
+            selectedOrManualWoolworthsLink;
         } else if (link.includes("coles.com.au")) {
           payload["ProductLinks"]["Coles"] = link;
         } else if (link.includes("woolworths.com.au")) {
@@ -433,7 +432,7 @@ export default function ListDetails() {
             </View>
             <Text style={g.textHeading}>{listName}</Text>
 
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { marginBottom: spacing.md }]}>
               <Text style={g.textLabel}>Products in List</Text>
               <Text style={styles.countPill}>{productCount}</Text>
             </View>
@@ -522,10 +521,7 @@ export default function ListDetails() {
                       onChangeText={setManualColesLink}
                       onFocus={() => setManualColesFocused(true)}
                       onBlur={() => setManualColesFocused(false)}
-                      style={[
-                        g.input,
-                        manualColesFocused && g.inputFocused,
-                      ]}
+                      style={[g.input, manualColesFocused && g.inputFocused]}
                     />
                   </View>
                 )}

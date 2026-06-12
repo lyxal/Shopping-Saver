@@ -66,14 +66,18 @@ export default function LandingPage() {
   };
 
   return (
-    <View style={[g.screenContainerCentered, { marginTop: -spacing.md }]}>
-      <Text style={g.textHeading}>Your Grocery Shopping</Text>
+    <View style={[g.screenContainerCentered, { marginTop: -spacing.lg }]}>
+      <Text style={[g.textHeading, { fontSize: g.textHeading.fontSize }]}>
+        Your Grocery Shopping
+      </Text>
       <Text
-        style={[g.textHeadingAmber, { fontSize: g.textHeading.fontSize * 1.8 }]}
+        style={[g.textHeadingAmber, { fontSize: g.textHeading.fontSize * 1.2 }]}
       >
         Enhancer
       </Text>
-
+      <Text style={[g.textHeading, { fontSize: g.textHeading.fontSize * 0.4 }]}>
+        Unlock a world of savings
+      </Text>
       <Image
         source={require("../../../assets/images/PlanetSplash.png")}
         style={styles.globe}
