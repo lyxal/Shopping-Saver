@@ -28,6 +28,88 @@ For AI assistance, I used agentic tools to:
 
 I initially tried using Codex to generate the entire frontend, but found it easier to hand-write the overall layout and use Codex for styling refinements instead - the generated frontend was architecturally overcomplicated, using patterns no human would recommend for an application of this scale.
 
+**Running Locally**
+
+The project has two separate applications:
+
+- `ComparisonAPI` - the C#/.NET backend API
+- `comparison-frontend` - the Expo/React Native frontend
+
+Prerequisites:
+
+- .NET 10 SDK
+- Node.js and npm
+- A MongoDB connection string
+- PowerShell, for the Playwright browser install command
+
+Backend setup:
+
+```powershell
+cd ComparisonAPI
+dotnet restore
+dotnet build
+```
+
+The backend requires a MongoDB connection string at `MongoDB:ConnectionString`. For local development, set it with .NET user secrets so it does not need to be committed to `appsettings.json`:
+
+```powershell
+dotnet user-secrets set "MongoDB:ConnectionString" "<your MongoDB connection string>"
+```
+
+The backend uses Playwright when scraping Coles pages, so the Playwright browser binaries must be installed after the first successful backend build:
+
+```powershell
+pwsh .\bin\Debug\net10.0\playwright.ps1 install chromium
+```
+
+To run the backend locally:
+
+```powershell
+dotnet run
+```
+
+The backend listens on `http://localhost:5000` in development.
+
+To build/publish the backend:
+
+```powershell
+dotnet publish -c Release -o .\publish
+```
+
+Frontend setup:
+
+```powershell
+cd comparison-frontend
+npm install
+Copy-Item .env.example .env
+```
+
+The default frontend API URL is `http://localhost:5000`. To use a different backend URL, edit `.env`:
+
+```text
+EXPO_PUBLIC_API_BASE_URL=http://localhost:5000
+```
+
+To run the frontend:
+
+```powershell
+npm run web
+```
+
+You can also start Expo without choosing a platform immediately:
+
+```powershell
+npm start
+```
+
+To build the frontend for web:
+
+```powershell
+npm run build:web
+```
+
+The web build output is written to `comparison-frontend/dist`.
+
 **Plans for the Next Iteration**
 
 If I had more time, I would:
